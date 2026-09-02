@@ -1,0 +1,34 @@
+---
+import { esIconoDeRelleno, pathDe, type NombreIcono } from "./iconos";
+
+/**
+ * Ícono SVG inline. Sin librería: los paths están en iconos.ts y el color se
+ * hereda con `currentColor`, así que no añade una petición ni un KB de JS.
+ */
+export interface Props {
+  nombre: NombreIcono;
+  /** Tamaño en px. El ícono es cuadrado. */
+  tamano?: number;
+  class?: string;
+}
+
+const { nombre, tamano = 24, class: clase = "" } = Astro.props;
+
+const relleno = esIconoDeRelleno(nombre);
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width={tamano}
+  height={tamano}
+  viewBox="0 0 24 24"
+  fill={relleno ? "currentColor" : "none"}
+  stroke={relleno ? undefined : "currentColor"}
+  stroke-width={relleno ? undefined : 1.5}
+  stroke-linecap={relleno ? undefined : "round"}
+  stroke-linejoin={relleno ? undefined : "round"}
+  aria-hidden="true"
+  focusable="false"
+  class={clase}
+  set:html={pathDe(nombre)}
+/>

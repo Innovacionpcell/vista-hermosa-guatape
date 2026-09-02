@@ -1,0 +1,59 @@
+---
+/**
+ * Botón de marca.
+ *
+ * - `primario`   dorado sólido con texto verde-900 — el CTA que convierte
+ * - `secundario` outline dorado sobre transparente — la acción alterna
+ * - `oscuro`     verde-800 sólido con texto dorado — sobre fondos claros (crema)
+ *
+ * El dorado es acento, no fondo de sección: solo aquí, en filetes, íconos y cifras.
+ */
+
+export interface Props {
+  variante?: "primario" | "secundario" | "oscuro";
+  href?: string;
+  type?: "button" | "submit";
+  tamano?: "normal" | "grande";
+  class?: string;
+  id?: string;
+  "aria-label"?: string;
+  "data-evento"?: string;
+  target?: string;
+  rel?: string;
+}
+
+const {
+  variante = "primario",
+  href,
+  type = "button",
+  tamano = "normal",
+  class: clase = "",
+  ...resto
+} = Astro.props;
+
+const base =
+  "inline-flex items-center justify-center gap-2.5 rounded-sm font-sans font-medium " +
+  "uppercase tracking-[0.14em] transition-colors duration-200 " +
+  "focus-visible:outline-2 focus-visible:outline-offset-3";
+
+const tamanos = {
+  normal: "px-6 py-3 text-xs",
+  grande: "px-8 py-4 text-sm",
+};
+
+const variantes = {
+  primario:
+    "bg-dorado-400 text-verde-900 hover:bg-dorado-500 focus-visible:outline-dorado-400",
+  secundario:
+    "border border-dorado-400 text-dorado-400 hover:border-dorado-400 hover:bg-dorado-400/10 focus-visible:outline-dorado-400",
+  oscuro:
+    "bg-verde-800 text-dorado-400 hover:bg-verde-700 focus-visible:outline-verde-800",
+};
+
+const clases = `${base} ${tamanos[tamano]} ${variantes[variante]} ${clase}`;
+const Etiqueta = href ? "a" : "button";
+---
+
+<Etiqueta class={clases} href={href} type={href ? undefined : type} {...resto}>
+  <slot />
+</Etiqueta>

@@ -1,0 +1,102 @@
+---
+import { proyecto, formatearNumero, formatearValorM2 } from "../data/proyecto";
+import { hero, src, srcset } from "../data/galeria";
+import Boton from "./Boton.astro";
+import Icono from "./Icono.astro";
+
+/**
+ * Hero a pantalla completa.
+ *
+ * 100svh, no 100vh: en móvil la barra del navegador hace que 100vh recorte el
+ * contenido y provoque un salto al hacer scroll. svh mide el viewport pequeño.
+ *
+ * La imagen es el LCP de la página: va con loading="eager", fetchpriority="high"
+ * y precargada desde el <head> (ver index.astro). Todo lo demás del hero es
+ * texto, sin JS.
+ */
+---
+
+<section
+  id="inicio"
+  class="relative flex min-h-[38rem] h-svh flex-col justify-end overflow-hidden bg-verde-900"
+>
+  <!-- Fotografía a sangre -->
+  <picture>
+    <source type="image/webp" srcset={srcset(hero.base)} sizes="100vw" />
+    <img
+      src={src(hero.base, 1920)}
+      alt={hero.alt}
+      width={hero.ancho}
+      height={hero.alto}
+      loading="eager"
+      fetchpriority="high"
+      decoding="sync"
+      class="absolute inset-0 -z-10 h-full w-full object-cover"
+    />
+  </picture>
+
+  <!-- Degradado verde-900/70 → transparente. Sostiene el contraste AA del texto. -->
+  <div
+    aria-hidden="true"
+    class="absolute inset-0 -z-10 bg-gradient-to-t from-verde-900 via-verde-900/70 to-verde-900/20"
+  >
+  </div>
+
+  <div class="mx-auto w-full max-w-7xl px-5 pb-16 sm:px-8 sm:pb-20 lg:pb-24">
+    <p class="filete-seccion max-w-md text-dorado-400">
+      {proyecto.sector} · {proyecto.ciudad}
+    </p>
+
+    <h1
+      class="mt-7 max-w-4xl font-serif text-[2.6rem] leading-[1.06] text-crema sm:text-6xl lg:text-7xl"
+    >
+      Lotes campestres en Guatapé con vista al embalse y a la Piedra del Peñol
+    </h1>
+
+    <p class="mt-6 max-w-2xl font-sans text-base text-crema/85 sm:text-lg">
+      {proyecto.lotesDisponibles} lotes disponibles, áreas desde {
+        formatearNumero(proyecto.areaMin)
+      } m&sup2; hasta {formatearNumero(proyecto.areaMax)} m&sup2;, a {
+        proyecto.tiempoAGuatape
+      } de {proyecto.ciudad}.
+    </p>
+
+    <!-- Cifra ancla + CTAs -->
+    <div class="mt-11 flex flex-col gap-8 lg:flex-row lg:items-end lg:gap-12">
+      <div class="shrink-0">
+        <p class="font-sans text-[0.7rem] tracking-[0.2em] text-dorado-400/80 uppercase">
+          Desde
+        </p>
+        <p class="mt-1.5 font-serif text-5xl leading-none text-dorado-400 sm:text-6xl">
+          {formatearValorM2(proyecto.precioM2Min)}
+        </p>
+        <p class="mt-3 font-sans text-sm text-crema/70">
+          Solo quedan {proyecto.lotesDisponibles} lotes disponibles.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center lg:pb-1">
+        <Boton href="#lotes" variante="primario" tamano="grande">
+          Ver lotes disponibles
+        </Boton>
+        <Boton
+          href="#recorrido-360"
+          variante="secundario"
+          tamano="grande"
+          data-evento="tour_360_scroll"
+        >
+          Recorrido virtual 360°
+        </Boton>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicador de scroll: decorativo, se oculta si el usuario pidió menos movimiento -->
+  <a
+    href="#datos-clave"
+    aria-label="Ir a los datos del proyecto"
+    class="absolute bottom-5 left-1/2 hidden -translate-x-1/2 text-dorado-400/60 transition-colors duration-200 hover:text-dorado-400 motion-safe:lg:block"
+  >
+    <Icono nombre="flecha-abajo" tamano={26} class="animate-bounce" />
+  </a>
+</section>

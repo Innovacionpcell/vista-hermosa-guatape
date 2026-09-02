@@ -1,0 +1,179 @@
+---
+import { enlaceWhatsApp, proyecto } from "../data/proyecto";
+import { logo } from "../data/galeria";
+import Icono from "./Icono.astro";
+
+/**
+ * Header transparente sobre el hero, sólido verde-800 al hacer scroll.
+ *
+ * NOTA DE ARQUITECTURA — por qué el menú móvil NO es una isla React.
+ * El brief pedía isla React para el menú móvil, pero también fija un
+ * presupuesto no negociable de JS inicial < 60 KB gzip. El runtime de React 19
+ * pesa ~61 KB gzip por sí solo, y un header es visible desde el primer píxel:
+ * ni client:visible ni client:idle lo sacan de la carga inicial. Un menú que
+ * abre y cierra un panel son ~25 líneas de JS inline. React se reserva para las
+ * islas que sí viven abajo en la página —calculadora, formulario, lightbox,
+ * filtro— donde client:visible mantiene el coste en cero hasta que hacen falta.
+ */
+
+const enlaces = [
+  { href: "#ubicacion", texto: "Ubicación" },
+  { href: "#recorrido-360", texto: "Recorrido 360°" },
+  { href: "#lotes", texto: "Lotes" },
+  { href: "#contacto", texto: "Contacto" },
+];
+
+const wa = enlaceWhatsApp();
+---
+
+<header
+  id="header"
+  data-solido="false"
+  class="fixed inset-x-0 top-0 z-40 transition-colors duration-300 data-[solido=true]:bg-verde-800 data-[solido=true]:shadow-[0_1px_0_0_rgba(227,203,167,0.18)]"
+>
+  <div class="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
+    <!-- Logo -->
+    <a
+      href="#inicio"
+      class="shrink-0"
+      aria-label={`${proyecto.nombre} — inicio`}
+    >
+      <img
+        src={logo.dorado.src}
+        alt={logo.dorado.alt}
+        width="160"
+        height="48"
+        class="h-11 w-auto sm:h-12"
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </a>
+
+    <!-- Navegación de escritorio -->
+    <nav aria-label="Navegación principal" class="hidden lg:block">
+      <ul class="flex items-center gap-9">
+        {
+          enlaces.map((enlace) => (
+            <li>
+              <a
+                href={enlace.href}
+                class="font-sans text-[0.7rem] font-medium tracking-[0.18em] text-crema uppercase transition-colors duration-200 hover:text-dorado-400"
+              >
+                {enlace.texto}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <!-- WhatsApp: visible siempre, en escritorio con texto -->
+      <a
+        href={wa}
+        target="_blank"
+        rel="noopener"
+        data-evento="whatsapp_click"
+        data-origen="header"
+        aria-label="Escribir por WhatsApp a Vista Hermosa Guatapé"
+        class="inline-flex items-center gap-2.5 rounded-sm border border-dorado-500 px-4 py-2.5 font-sans text-[0.7rem] font-medium tracking-[0.14em] text-dorado-400 uppercase transition-colors duration-200 hover:border-dorado-400 hover:bg-dorado-400/10"
+      >
+        <Icono nombre="whatsapp" tamano={17} />
+        <span class="hidden sm:inline">WhatsApp</span>
+      </a>
+
+      <!-- Hamburguesa: solo móvil y tablet -->
+      <button
+        id="boton-menu"
+        type="button"
+        aria-expanded="false"
+        aria-controls="menu-movil"
+        aria-label="Abrir menú"
+        class="group inline-flex h-11 w-11 items-center justify-center rounded-sm text-crema transition-colors duration-200 hover:text-dorado-400 lg:hidden"
+      >
+        <Icono nombre="menu" tamano={24} class="group-aria-expanded:hidden" />
+        <Icono nombre="cerrar" tamano={24} class="hidden group-aria-expanded:block" />
+      </button>
+    </div>
+  </div>
+
+  <!-- Panel móvil -->
+  <nav
+    id="menu-movil"
+    aria-label="Navegación móvil"
+    hidden
+    class="border-t border-dorado-500/25 bg-verde-800 lg:hidden"
+  >
+    <ul class="mx-auto max-w-7xl px-5 py-3 sm:px-8">
+      {
+        enlaces.map((enlace) => (
+          <li class="border-b border-dorado-500/12 last:border-0">
+            <a
+              href={enlace.href}
+              class="block py-4 font-sans text-sm tracking-[0.14em] text-crema uppercase transition-colors duration-200 hover:text-dorado-400"
+            >
+              {enlace.texto}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</header>
+
+<script is:inline>
+  (function () {
+    var header = document.getElementById("header");
+    var boton = document.getElementById("boton-menu");
+    var menu = document.getElementById("menu-movil");
+    if (!header || !boton || !menu) return;
+
+    /* ── Estado sólido al hacer scroll ──────────────────────────────────
+       Un sentinel + IntersectionObserver en vez de escuchar scroll: el
+       navegador no ejecuta JS en cada píxel desplazado. */
+    var sentinel = document.createElement("div");
+    sentinel.setAttribute("aria-hidden", "true");
+    sentinel.style.cssText = "position:absolute;top:0;height:64px;width:1px;pointer-events:none";
+    document.body.prepend(sentinel);
+
+    new IntersectionObserver(
+      function (entradas) {
+        header.dataset.solido = entradas[0].isIntersecting ? "false" : "true";
+      },
+      { threshold: 0 }
+    ).observe(sentinel);
+
+    /* ── Menú móvil ─────────────────────────────────────────────────── */
+    function alternar(abrir) {
+      boton.setAttribute("aria-expanded", String(abrir));
+      boton.setAttribute("aria-label", abrir ? "Cerrar menú" : "Abrir menú");
+      menu.hidden = !abrir;
+      /* Con el panel abierto el header siempre va sólido: si no, el menú
+         flota sobre la foto del hero y el texto se vuelve ilegible. */
+      if (abrir) header.dataset.solido = "true";
+    }
+
+    boton.addEventListener("click", function () {
+      alternar(boton.getAttribute("aria-expanded") !== "true");
+    });
+
+    /* Al elegir una sección el menú se cierra solo */
+    menu.addEventListener("click", function (e) {
+      if (e.target.closest("a")) alternar(false);
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && boton.getAttribute("aria-expanded") === "true") {
+        alternar(false);
+        boton.focus();
+      }
+    });
+
+    /* Al pasar a escritorio el panel debe quedar cerrado y no dejar el
+       aria-expanded en true sobre un botón que ya no se ve */
+    matchMedia("(min-width: 1024px)").addEventListener("change", function (e) {
+      if (e.matches) alternar(false);
+    });
+  })();
+</script>

@@ -1,0 +1,79 @@
+---
+import { proyecto, formatearNumero, formatearValorM2 } from "../data/proyecto";
+import Icono from "./Icono.astro";
+import type { NombreIcono } from "./iconos";
+
+/**
+ * Barra de datos clave. Fondo crema, 4 columnas → 2 en móvil.
+ *
+ * El valor por m² es la cifra dominante de la barra: es la unidad comercial del
+ * proyecto y lo que la gente busca. Por eso va destacada (`dominante: true`) y
+ * en dorado-600, que es el dorado que da contraste AA sobre fondo claro.
+ */
+
+interface Dato {
+  icono: NombreIcono;
+  valor: string;
+  etiqueta: string;
+  dominante?: boolean;
+}
+
+const datos: Dato[] = [
+  {
+    icono: "lotes",
+    valor: String(proyecto.lotesDisponibles),
+    etiqueta: "Lotes disponibles",
+  },
+  {
+    icono: "area",
+    valor: `${formatearNumero(proyecto.areaMin)} – ${formatearNumero(proyecto.areaMax)}`,
+    etiqueta: "Metros cuadrados por lote",
+  },
+  {
+    icono: "precio",
+    valor: `Desde ${formatearValorM2(proyecto.precioM2Min)}`,
+    etiqueta: "Valor del metro cuadrado",
+    dominante: true,
+  },
+  {
+    icono: "reloj",
+    valor: proyecto.tiempoAGuatape,
+    etiqueta: `De ${proyecto.ciudad}`,
+  },
+];
+---
+
+<section id="datos-clave" class="bg-crema" aria-label="Datos clave del proyecto">
+  <div class="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-16">
+    <dl class="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4 lg:gap-x-10">
+      {
+        datos.map((dato) => (
+          <div
+            class={`flex flex-col items-start gap-3 border-l pl-5 ${
+              dato.dominante ? "border-dorado-600" : "border-dorado-500/40"
+            }`}
+          >
+            <Icono
+              nombre={dato.icono}
+              tamano={26}
+              class={dato.dominante ? "text-dorado-600" : "text-verde-700"}
+            />
+
+            <dd
+              class={`font-serif leading-none ${
+                dato.dominante
+                  ? "text-3xl text-dorado-600 sm:text-4xl"
+                  : "text-2xl text-verde-800 sm:text-3xl"
+              }`}
+              set:html={dato.valor.replace(/m2/g, "m&sup2;")}
+            />
+
+            <dt class="font-sans text-[0.7rem] tracking-[0.16em] text-texto/60 uppercase">
+              {dato.etiqueta}
+            </dt>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>

@@ -54,89 +54,68 @@ src/
 
 ## Despliegue
 
-Hostinger compartido no ejecuta `npm run build`. El build corre en GitHub Actions y por
-FTP solo viaja el contenido ya compilado de `dist/`.
+**Producción:** https://lotescampestresguatape.com
 
-### 1. Crear el repositorio y conectarlo
-
-El repo está inicializado en local, sin remote. Cuando lo crees en GitHub:
+Hostinger está configurado con **Node 22**, importando este repositorio de GitHub
+directamente y ejecutando el build en cada `push`. No hay que hacer nada más: se empuja a
+`main` y el sitio se reconstruye solo.
 
 ```bash
-git remote add origin git@github.com:USUARIO/REPO.git
-git push -u origin main
+git push origin main   # eso es todo el despliegue
 ```
 
-### 2. Cargar los tres secrets
+No hay workflow de GitHub Actions ni subida por FTP: Hostinger compila. Por eso el
+dominio real está como **fallback en `astro.config.mjs`** y no solo en `.env` — `.env` no
+se versiona, así que el build en el servidor debe producir `canonical`, `og:url` y
+`sitemap.xml` correctos aunque no haya ninguna variable definida en el panel.
 
-En GitHub: **Settings → Secrets and variables → Actions → New repository secret**.
-
-| Secret | De dónde sale en hPanel |
-|---|---|
-| `FTP_SERVER` | *Archivos → Cuentas FTP* → campo **Host / Dirección del servidor FTP** |
-| `FTP_USERNAME` | *Archivos → Cuentas FTP* → **Nombre de usuario FTP** |
-| `FTP_PASSWORD` | *Archivos → Cuentas FTP* → **Cambiar contraseña de la cuenta FTP** (hPanel no muestra la actual: hay que fijar una nueva) |
-
-Opcionalmente, como **variables** (no secrets, en la pestaña *Variables*):
-`PUBLIC_SITE_URL`, `PUBLIC_GA4_ID`, `PUBLIC_META_PIXEL_ID`.
-
-Con eso, cada `push` a `main` compila y sincroniza `dist/` con `/public_html/`.
-También se puede lanzar a mano desde la pestaña **Actions → Run workflow**.
-
-### 3. Las credenciales del CRM van fuera de public_html
-
-La URL del webhook y el secreto **no están en el repositorio ni son accesibles por HTTP**.
-Se suben **una sola vez a mano** con el Administrador de archivos de hPanel, a un archivo
-PHP fuera de `public_html`:
-
-```
-/home/uXXXXXXXX/config/crm.php
-```
-
-```php
-<?php
-// NO va en el repositorio. Fuera de public_html: no es accesible por HTTP.
-return [
-  'webhook_url' => 'https://…',
-  'webhook_secret' => '…',
-];
-```
-
-`lead.php` lo carga con `require_once` y cae a un respaldo `.jsonl` si el CRM falla, para
-no perder ningún lead.
-
-### 4. Dominio y HTTPS
-
-1. hPanel → *Dominios* → apuntar el dominio al hosting (o cambiar los nameservers a los
-   de Hostinger si el dominio está en otro registrador).
-2. hPanel → *Seguridad → SSL* → instalar el certificado gratuito y esperar a que quede
-   **Activo**.
-3. La redirección a HTTPS y el `sin www` los fuerza el `.htaccess` que viaja en `dist/`;
-   no hace falta activarlos también en hPanel (duplicarlos puede provocar bucles).
-4. Actualizar `PUBLIC_SITE_URL` y la línea `Sitemap:` de `public/robots.txt` con el
-   dominio real, y volver a desplegar.
+Si en algún momento quieres apuntar a un entorno de pruebas, define `PUBLIC_SITE_URL` en
+las variables de entorno de hPanel; el fallback solo aplica cuando la variable no existe.
 
 ### Deploy manual de emergencia
 
-Si Actions falla y hay que publicar ya:
+Si el build automático falla y hay que publicar ya:
 
 ```bash
 npm ci
 npm run build
 ```
 
-hPanel → *Archivos → Administrador de archivos* → entrar a `public_html` → subir **el
-contenido** de `dist/` (no la carpeta). Verificar que `.htaccess` y `api/lead.php`
-quedaron arriba: el administrador de archivos oculta los archivos que empiezan por punto
-hasta que se activa *Mostrar archivos ocultos*.
+Y subir el **contenido** de `dist/` (no la carpeta) por el Administrador de archivos de
+hPanel. El administrador oculta los archivos que empiezan por punto hasta que se activa
+*Mostrar archivos ocultos*, así que hay que verificar a mano que `.htaccess` haya subido.
 
-### Probar el formulario
+---
 
-`lead.php` solo se puede validar de verdad en un servidor con PHP. Tras el primer deploy:
+## ⚠️ Backend del formulario — pendiente de replantear (Etapa 6)
+
+El brief original asumía Hostinger **compartido con PHP** y por eso especificaba un proxy
+`public/api/lead.php`. **El entorno real es Node 22, así que ese archivo PHP no se va a
+ejecutar.** El formulario se replantea al llegar a la Etapa 6. Opciones sobre la mesa:
+
+1. **Endpoint de Astro con adaptador de Node** (`@astrojs/node`) — implica pasar de
+   `output: 'static'` a `output: 'hybrid'` con la home prerenderizada y solo la ruta del
+   formulario en servidor. Mantiene todo en el mismo repositorio y el secreto del CRM
+   nunca llega al navegador. Es la opción por defecto.
+2. **POST directo del navegador al webhook del CRM** — descartada salvo que el CRM
+   ofrezca un endpoint público pensado para eso: expondría la URL del webhook y lo dejaría
+   abierto a spam.
+3. **Servicio externo de formularios** — más simple, pero mete un tercero en la ruta del
+   lead y complica el payload con UTMs.
+
+**Consecuencia adicional a verificar:** con hosting Node, el `public/.htaccess` puede ser
+**inerte** — si el sitio no lo sirve Apache/LiteSpeed, se pierden la redirección a HTTPS,
+el `sin www`, la compresión y las cabeceras de caché inmutable de `/img` y `/fonts`. Eso
+afecta directamente al presupuesto de performance. Hay que comprobar en el primer deploy
+si `.htaccess` surte efecto y, si no, replicar esas reglas donde corresponda.
+
+### Cómo probar el formulario
+
+Cuando exista, tras el primer deploy:
 
 1. Enviar el formulario desde el sitio publicado.
-2. Confirmar que el lead llegó al CRM.
-3. Forzar un fallo (webhook mal apuntado) y confirmar que el lead quedó en el `.jsonl`
-   de respaldo fuera de `public_html`.
+2. Confirmar que el lead llegó al CRM con las UTMs completas.
+3. Forzar un fallo del webhook y confirmar que el lead quedó en el respaldo y no se perdió.
 
 ---
 
@@ -148,9 +127,9 @@ plausibles: van visibles a propósito.
 | # | Pendiente | Dónde |
 |---|---|---|
 | 1 | Teléfono fijo y correo de contacto | `src/data/proyecto.ts` |
-| 2 | Dominio definitivo | `astro.config.mjs`, `public/robots.txt`, `.env` |
+| 2 | ~~Dominio definitivo~~ — resuelto: `lotescampestresguatape.com` | — |
 | 3 | Razón social y NIT del vendedor | footer |
-| 4 | URL del webhook del CRM y su secreto | `public/api/lead.php`, config fuera de `public_html` |
+| 4 | URL del webhook del CRM y su secreto, **y decidir el mecanismo de envío** (ver arriba: el hosting es Node, no PHP) | Etapa 6 |
 | 5 | Política de tratamiento de datos personales (Ley 1581 de 2012) | formulario y footer |
 | 6 | **Cuáles dos lotes están vendidos.** El plano rotula 11 lotes con 2 marcados "SOLD", pero las líneas guía no permiten atribuirlos a un número con certeza. Por decisión explícita, **ningún hotspot se marca como vendido**: marcar mal un lote disponible cuesta un cliente | `src/data/lotes.ts` |
 | 7 | **11 lotes en el plano vs. 10 disponibles en los datos oficiales.** Se usa 10 en todo el copy y el JSON-LD, según la regla de que las cifras del cliente mandan | `src/data/lotes.ts` |

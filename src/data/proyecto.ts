@@ -63,7 +63,7 @@ export const proyecto: Proyecto = {
 
   telefono: "PENDIENTE", // TODO: confirmar antes de publicar
   email: "PENDIENTE", // TODO: confirmar antes de publicar
-  dominio: "https://PENDIENTE.com", // TODO: confirmar antes de publicar
+  dominio: "https://lotescampestresguatape.com",
 };
 
 /**

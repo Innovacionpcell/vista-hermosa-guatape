@@ -13,6 +13,17 @@ import Icono from "./Icono.astro";
  * La imagen es el LCP de la página: va con loading="eager", fetchpriority="high"
  * y precargada desde el <head> (ver index.astro). Todo lo demás del hero es
  * texto, sin JS.
+ *
+ * CUIDADO CON EL Z-INDEX (esto ya rompió el hero una vez):
+ * `position:relative` con `z-index:auto` NO crea contexto de apilamiento. Sin
+ * él, un hijo con z-index NEGATIVO no se pinta detrás de sus hermanos, sino
+ * detrás del fondo del PROPIO <section> — y `bg-verde-900` lo tapa por completo.
+ * Por eso la foto y el degradado NO llevan -z-10: basta el orden del DOM
+ * (foto → degradado → contenido), porque un elemento posicionado con z-index
+ * auto ya se pinta sobre el fondo de su padre. El contenido lleva `relative`
+ * para entrar en esa misma capa y quedar por encima del degradado.
+ * El bg-verde-900 del section queda solo como color de respaldo mientras la
+ * imagen carga.
  */
 ---
 
@@ -20,7 +31,7 @@ import Icono from "./Icono.astro";
   id="inicio"
   class="relative flex min-h-[38rem] h-svh flex-col justify-end overflow-hidden bg-verde-900"
 >
-  <!-- Fotografía a sangre -->
+  {/* Fotografía a sangre. Ver la nota de z-index arriba antes de tocar esto. */}
   <picture>
     <source type="image/webp" srcset={srcset(hero.base)} sizes="100vw" />
     <img
@@ -31,18 +42,18 @@ import Icono from "./Icono.astro";
       loading="eager"
       fetchpriority="high"
       decoding="sync"
-      class="absolute inset-0 -z-10 h-full w-full object-cover"
+      class="absolute inset-0 h-full w-full object-cover"
     />
   </picture>
 
   <!-- Degradado verde-900/70 → transparente. Sostiene el contraste AA del texto. -->
   <div
     aria-hidden="true"
-    class="absolute inset-0 -z-10 bg-gradient-to-t from-verde-900 via-verde-900/70 to-verde-900/20"
+    class="absolute inset-0 bg-gradient-to-t from-verde-900 via-verde-900/70 to-verde-900/20"
   >
   </div>
 
-  <div class="mx-auto w-full max-w-7xl px-5 pb-16 sm:px-8 sm:pb-20 lg:pb-24">
+  <div class="relative mx-auto w-full max-w-7xl px-5 pb-16 sm:px-8 sm:pb-20 lg:pb-24">
     <p class="filete-seccion max-w-md text-dorado-400">
       {proyecto.sector} · {proyecto.ciudad}
     </p>

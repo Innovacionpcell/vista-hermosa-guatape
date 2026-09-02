@@ -1,0 +1,52 @@
+---
+import { faq } from "../data/faq";
+import TituloSeccion from "./TituloSeccion.astro";
+
+/**
+ * Acordeón de preguntas frecuentes.
+ *
+ * <details>/<summary> nativos: accesibles por teclado de serie, funcionan sin
+ * JS y el contenido queda en el HTML para que Google lo indexe. Alimenta el
+ * bloque JSON-LD FAQPage desde el MISMO arreglo, así que schema y pantalla no
+ * se pueden desincronizar.
+ *
+ * `name="faq"` hace que solo una quede abierta a la vez, sin una línea de JS.
+ */
+---
+
+<section id="faq" class="bg-crema">
+  <div class="mx-auto max-w-4xl px-5 py-20 sm:px-8 sm:py-28">
+    <TituloSeccion eyebrow="Preguntas frecuentes" tono="claro" centrado>
+      Lo que más nos preguntan
+    </TituloSeccion>
+
+    <div class="mt-14">
+      {
+        faq.map((item) => (
+          <details name="faq" class="group border-b border-dorado-500/30">
+            <summary
+              class="flex cursor-pointer list-none items-center justify-between gap-6 py-6 font-serif text-lg text-verde-800 transition-colors duration-200 hover:text-dorado-600 sm:text-xl"
+            >
+              {item.pregunta}
+              <span
+                aria-hidden="true"
+                class="relative h-4 w-4 shrink-0 text-dorado-600 transition-transform duration-300 group-open:rotate-45"
+              >
+                <span class="absolute top-1/2 left-0 h-px w-4 -translate-y-1/2 bg-current" />
+                <span class="absolute top-0 left-1/2 h-4 w-px -translate-x-1/2 bg-current" />
+              </span>
+            </summary>
+            <p class="pb-7 font-sans text-sm leading-relaxed text-texto/70">{item.respuesta}</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Safari pinta un triángulo propio que ignora list-style */
+  summary::-webkit-details-marker {
+    display: none;
+  }
+</style>

@@ -19,6 +19,14 @@ export const iconosTrazo = {
   reloj: `<circle cx="12" cy="12" r="9"/><path d="M12 6.75V12l3.5 2"/>`,
   mapa: `<path d="M20 10.5c0 5.2-6.4 10.2-7.6 11.1a.7.7 0 0 1-.8 0C10.4 20.7 4 15.7 4 10.5a8 8 0 1 1 16 0z"/><circle cx="12" cy="10.3" r="2.8"/>`,
   menu: `<path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/>`,
+  telefono: `<path d="M6.5 3h3l1.5 4-2 1.4a12 12 0 0 0 5.6 5.6L16 12l4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4 6.2 2 2 0 0 1 6 4z"/>`,
+  // Especificaciones
+  via: `<path d="M4 21 8.5 3"/><path d="M20 21 15.5 3"/><path d="M12 4.5v2.5"/><path d="M12 10.5v3"/><path d="M12 17v2.5"/>`,
+  montana: `<path d="M3 19h18"/><path d="m5 19 5.5-11 3 5.5 2-3L21 19"/>`,
+  bosque: `<path d="M12 3 7 11h3l-3.5 5.5h11L14 11h3z"/><path d="M12 16.5V21"/>`,
+  documento: `<path d="M14 3H7a1.6 1.6 0 0 0-1.6 1.6v14.8A1.6 1.6 0 0 0 7 21h10a1.6 1.6 0 0 0 1.6-1.6V7.6z"/><path d="M14 3v4.6h4.6"/><path d="M9 13h6"/><path d="M9 16.5h4"/>`,
+  agua: `<path d="M12 3.5c3.2 3.6 5.5 6.3 5.5 9.1A5.5 5.5 0 0 1 6.5 12.6c0-2.8 2.3-5.5 5.5-9.1z"/>`,
+  energia: `<path d="M13.5 2.5 5 13.5h5.5L9.5 21.5 18 10.5h-5.5z"/>`,
   cerrar: `<path d="M6 6l12 12"/><path d="M18 6 6 18"/>`,
   "flecha-abajo": `<path d="M12 5v14"/><path d="m6 13 6 6 6-6"/>`,
 } as const;

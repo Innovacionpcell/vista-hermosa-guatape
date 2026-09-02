@@ -68,7 +68,7 @@
   html {
     scroll-behavior: smooth;
     /* El header fijo no debe tapar el destino de las anclas */
-    scroll-padding-top: 5rem;
+    scroll-padding-top: 6.5rem;
     -webkit-text-size-adjust: 100%;
   }
 

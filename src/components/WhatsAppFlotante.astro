@@ -1,0 +1,84 @@
+---
+import { proyecto, enlaceWhatsApp } from "../data/proyecto";
+import Icono from "./Icono.astro";
+
+/**
+ * Botón flotante de WhatsApp. Pieza de marca, NO el widget verde genérico.
+ *
+ * Círculo verde-800 con borde dorado y el glifo en dorado-400, dibujado como
+ * <svg> propio (ver iconos.ts). Nunca el verde corporativo de WhatsApp: rompería
+ * la paleta del proyecto justo en el elemento que está siempre en pantalla.
+ *
+ * Nada de scripts de terceros: un widget de chat externo son cientos de KB y
+ * una petición a otro dominio, para lo que aquí es un enlace.
+ *
+ * El anillo de pulso se detiene tras 3 ciclos (animation-iteration-count) para
+ * llamar la atención sin convertirse en un parpadeo permanente, y desaparece
+ * entero con prefers-reduced-motion.
+ */
+
+const wa = enlaceWhatsApp();
+---
+
+<a
+  href={wa}
+  target="_blank"
+  rel="noopener"
+  data-evento="whatsapp_click"
+  data-origen="flotante"
+  aria-label="Escribir por WhatsApp a Vista Hermosa Guatapé"
+  class="wa-flotante group fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full border-[1.5px] border-dorado-500 bg-verde-800 text-dorado-400 shadow-lg shadow-verde-900/40 transition-colors duration-200 hover:border-dorado-400 hover:bg-verde-700 sm:h-[60px] sm:w-[60px]"
+>
+  <Icono nombre="whatsapp" tamano={26} class="relative z-10" />
+
+  {/* Etiqueta que se despliega hacia la izquierda al hover/focus */}
+  <span
+    aria-hidden="true"
+    class="pointer-events-none absolute right-full mr-3 rounded-sm border border-dorado-500/40 bg-verde-800 px-3.5 py-2 font-sans text-xs whitespace-nowrap text-dorado-400 opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+  >
+    Escríbenos
+  </span>
+</a>
+
+<style>
+  .wa-flotante {
+    /* En iOS el borde inferior de la pantalla lo ocupa la barra del sistema */
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* En móvil la barra CTA sticky ocupa la parte baja: el botón sube para no
+     quedar debajo de ella. La barra mide ~4.5rem. */
+  @media (max-width: 639px) {
+    .wa-flotante {
+      bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  /* Anillo de pulso dorado, discreto y finito */
+  .wa-flotante::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 9999px;
+    box-shadow: 0 0 0 0 rgba(200, 164, 106, 0.55);
+    animation: pulso-dorado 2.5s ease-out 3;
+  }
+
+  @keyframes pulso-dorado {
+    0% {
+      box-shadow: 0 0 0 0 rgba(200, 164, 106, 0.5);
+    }
+    70% {
+      box-shadow: 0 0 0 14px rgba(200, 164, 106, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(200, 164, 106, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wa-flotante::before {
+      animation: none;
+    }
+  }
+</style>

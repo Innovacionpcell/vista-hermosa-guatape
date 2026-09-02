@@ -1,5 +1,5 @@
 ---
-import { enlaceWhatsApp, proyecto } from "../data/proyecto";
+import { proyecto } from "../data/proyecto";
 import { logo } from "../data/galeria";
 import Icono from "./Icono.astro";
 
@@ -23,7 +23,12 @@ const enlaces = [
   { href: "#contacto", texto: "Contacto" },
 ];
 
-const wa = enlaceWhatsApp();
+/*
+ * El WhatsApp del header se sustituyó por un enlace de LLAMADA. WhatsApp ya
+ * tiene dos puntos de entrada permanentes (el botón flotante y la barra CTA
+ * móvil); repetirlo aquí era la tercera vez. El teléfono cubre a quien prefiere
+ * hablar, y en móvil `tel:` marca directamente.
+ */
 ---
 
 <header
@@ -31,7 +36,7 @@ const wa = enlaceWhatsApp();
   data-solido="false"
   class="fixed inset-x-0 top-0 z-40 transition-colors duration-300 data-[solido=true]:bg-verde-800 data-[solido=true]:shadow-[0_1px_0_0_rgba(227,203,167,0.18)]"
 >
-  <div class="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
+  <div class="mx-auto flex h-24 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
     {/*
       Lockup del header: emblema + nombre como texto.
 
@@ -56,7 +61,7 @@ const wa = enlaceWhatsApp();
         alt=""
         width="174"
         height="160"
-        class="h-12 w-auto sm:h-14"
+        class="h-14 w-auto sm:h-[4.25rem]"
         loading="eager"
         fetchpriority="high"
         decoding="async"
@@ -64,7 +69,7 @@ const wa = enlaceWhatsApp();
 
       <span class="flex flex-col leading-none">
         <span
-          class="font-serif text-[1.05rem] tracking-[0.18em] text-dorado-400 uppercase sm:text-xl"
+          class="font-serif text-[1.2rem] tracking-[0.18em] text-dorado-400 uppercase sm:text-2xl"
         >
           Vista Hermosa
         </span>
@@ -99,18 +104,16 @@ const wa = enlaceWhatsApp();
     </nav>
 
     <div class="flex items-center gap-3">
-      <!-- WhatsApp: visible siempre, en escritorio con texto -->
+      {/* Llamada directa. En móvil `tel:` abre el marcador del teléfono. */}
       <a
-        href={wa}
-        target="_blank"
-        rel="noopener"
-        data-evento="whatsapp_click"
+        href={`tel:+${proyecto.whatsapp}`}
+        data-evento="telefono_click"
         data-origen="header"
-        aria-label="Escribir por WhatsApp a Vista Hermosa Guatapé"
-        class="inline-flex items-center gap-2.5 rounded-sm border border-dorado-500 px-4 py-2.5 font-sans text-[0.7rem] font-medium tracking-[0.14em] text-dorado-400 uppercase transition-colors duration-200 hover:border-dorado-400 hover:bg-dorado-400/10"
+        aria-label={`Llamar al ${proyecto.whatsappDisplay}`}
+        class="inline-flex items-center gap-2.5 rounded-sm border border-dorado-500 px-4 py-2.5 font-sans text-[0.75rem] font-medium tracking-[0.1em] text-dorado-400 transition-colors duration-200 hover:border-dorado-400 hover:bg-dorado-400/10"
       >
-        <Icono nombre="whatsapp" tamano={17} />
-        <span class="hidden sm:inline">WhatsApp</span>
+        <Icono nombre="telefono" tamano={17} />
+        <span>{proyecto.whatsappDisplay}</span>
       </a>
 
       <!-- Hamburguesa: solo móvil y tablet -->

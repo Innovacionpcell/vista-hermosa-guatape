@@ -1,0 +1,162 @@
+---
+import { proyecto } from "../data/proyecto";
+import { logo } from "../data/galeria";
+import Icono from "./Icono.astro";
+
+/**
+ * Footer. Incluye la nota legal obligatoria y el aviso de tratamiento de datos.
+ *
+ * La nota legal no es decorativa: en venta de lotes sobre plano, decir que los
+ * renders son ilustrativos y que áreas y valores están sujetos a verificación
+ * es lo que separa una pieza publicitaria correcta de una oferta comercial
+ * vinculante.
+ */
+
+const { lat, lng } = proyecto.coordenadas;
+const anio = new Date().getFullYear();
+
+const enlaces = [
+  { href: "#ubicacion", texto: "Ubicación" },
+  { href: "#recorrido-360", texto: "Recorrido 360°" },
+  { href: "#galeria", texto: "Galería" },
+  { href: "#lotes", texto: "Lotes" },
+  { href: "#faq", texto: "Preguntas frecuentes" },
+  { href: "#contacto", texto: "Contacto" },
+];
+
+// TODO: el cliente debe entregar la URL de Growth Digital. No se inventa un
+// dominio: mientras sea PENDIENTE, el crédito va como texto sin enlace.
+const growthUrl = "PENDIENTE";
+const hayGrowthUrl = !growthUrl.startsWith("PENDIENTE");
+---
+
+<footer class="bg-verde-900">
+  <div class="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
+    <div class="grid gap-12 lg:grid-cols-[1.2fr_1fr_1fr]">
+      {/* Marca */}
+      <div>
+        <div class="flex items-center gap-3.5">
+          <img
+            src={logo.emblema.src}
+            alt=""
+            width={logo.emblema.ancho}
+            height={logo.emblema.alto}
+            class="h-14 w-auto"
+            loading="lazy"
+            decoding="async"
+          />
+          <span class="flex flex-col leading-none">
+            <span class="font-serif text-lg tracking-[0.18em] text-dorado-400 uppercase">
+              Vista Hermosa
+            </span>
+            <span
+              class="mt-1.5 font-sans text-[0.5rem] tracking-[0.34em] text-dorado-500 uppercase"
+            >
+              {proyecto.ciudad}
+            </span>
+          </span>
+        </div>
+
+        <p class="mt-6 max-w-xs font-sans text-sm leading-relaxed text-crema/55">
+          Lotes campestres en el sector {proyecto.sector}, a {proyecto.tiempoAGuatape} de{" "}
+          {proyecto.ciudad}, {proyecto.departamento}.
+        </p>
+
+        <p class="mt-5 font-sans text-xs text-crema/40">
+          Desarrolla <span class="text-crema/70">{proyecto.desarrolla}</span>
+        </p>
+      </div>
+
+      {/* Navegación */}
+      <nav aria-label="Enlaces del pie">
+        <h3 class="font-sans text-[0.65rem] tracking-[0.2em] text-dorado-400/70 uppercase">
+          Secciones
+        </h3>
+        <ul class="mt-5 space-y-3">
+          {
+            enlaces.map((enlace) => (
+              <li>
+                <a
+                  href={enlace.href}
+                  class="font-sans text-sm text-crema/60 transition-colors duration-200 hover:text-dorado-400"
+                >
+                  {enlace.texto}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      {/* Contacto */}
+      <div>
+        <h3 class="font-sans text-[0.65rem] tracking-[0.2em] text-dorado-400/70 uppercase">
+          Contacto
+        </h3>
+
+        <ul class="mt-5 space-y-4">
+          <li>
+            <a
+              href={`tel:+${proyecto.whatsapp}`}
+              class="inline-flex items-center gap-2.5 font-sans text-sm text-crema/60 transition-colors duration-200 hover:text-dorado-400"
+            >
+              <Icono nombre="telefono" tamano={15} class="text-dorado-400" />
+              {proyecto.whatsappDisplay}
+            </a>
+          </li>
+          <li>
+            <a
+              href={proyecto.googleMaps}
+              target="_blank"
+              rel="noopener"
+              class="inline-flex items-start gap-2.5 font-sans text-sm text-crema/60 transition-colors duration-200 hover:text-dorado-400"
+            >
+              <Icono nombre="mapa" tamano={15} class="mt-0.5 shrink-0 text-dorado-400" />
+              <span>
+                {proyecto.sector}, {proyecto.ciudad}
+                <span class="mt-1 block font-mono text-[0.7rem] text-crema/35">
+                  {lat}, {lng}
+                </span>
+              </span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    {/* ── Nota legal ─────────────────────────────────────────────────── */}
+    <div class="mt-14 space-y-3 border-t border-dorado-500/20 pt-8">
+      <p class="max-w-4xl font-sans text-[0.7rem] leading-relaxed text-crema/40">
+        Las imágenes de render son ilustrativas y no constituyen oferta comercial. Áreas y
+        valores están sujetos a disponibilidad y a verificación en el levantamiento
+        topográfico. El valor por m&sup2; varía según el lote y su ubicación dentro del
+        proyecto.
+      </p>
+      <p class="max-w-4xl font-sans text-[0.7rem] leading-relaxed text-crema/40">
+        Los datos personales que nos compartas se tratan conforme a la Ley 1581 de 2012 y
+        se usan únicamente para contactarte sobre este proyecto.
+      </p>
+    </div>
+
+    <div
+      class="mt-8 flex flex-col gap-3 border-t border-dorado-500/15 pt-7 font-sans text-xs text-crema/35 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p>© {anio} {proyecto.nombre}</p>
+      <p>
+        Desarrollado por{" "}
+        {
+          hayGrowthUrl ? (
+            <a
+              href={growthUrl}
+              class="text-dorado-400/80 transition-colors duration-200 hover:text-dorado-400"
+            >
+              Growth Digital
+            </a>
+          ) : (
+            <span class="text-dorado-400/80">Growth Digital</span>
+          )
+        }
+      </p>
+    </div>
+  </div>
+</footer>

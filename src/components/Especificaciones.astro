@@ -1,0 +1,63 @@
+---
+import { especificacionesPublicables, especificaciones } from "../data/especificaciones";
+import { proyecto } from "../data/proyecto";
+import TituloSeccion from "./TituloSeccion.astro";
+import Icono from "./Icono.astro";
+
+/**
+ * Especificaciones del proyecto.
+ *
+ * Solo se pintan los ítems CONFIRMADOS. Los pendientes viven en el archivo de
+ * datos pero no se publican: prometer agua o energía sin respaldo del cliente
+ * es exactamente el tipo de afirmación que hunde la credibilidad de una venta
+ * de lotes. En su lugar, un enlace honesto a WhatsApp para preguntar.
+ */
+
+const pendientes = especificaciones.length - especificacionesPublicables.length;
+---
+
+<section id="especificaciones" class="bg-verde-900">
+  <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
+    <TituloSeccion eyebrow="El proyecto" tono="oscuro">
+      Qué incluye cada lote
+    </TituloSeccion>
+
+    <ul class="mt-14 grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        especificacionesPublicables.map((especificacion) => (
+          <li class="flex items-start gap-4">
+            <span class="mt-0.5 shrink-0 text-dorado-400">
+              <Icono nombre={especificacion.icono} tamano={24} />
+            </span>
+            <span>
+              <h3 class="font-serif text-xl text-crema">{especificacion.titulo}</h3>
+              <p class="mt-1.5 font-sans text-sm leading-relaxed text-crema/60">
+                {especificacion.detalle}
+              </p>
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+
+    {
+      pendientes > 0 && (
+        <p class="mt-14 border-t border-dorado-500/25 pt-7 font-sans text-sm text-crema/55">
+          ¿Necesitas el detalle de servicios, escrituración o el estado del trámite ante
+          Planeación Municipal?{" "}
+          <a
+            href={`https://wa.me/${proyecto.whatsapp}`}
+            target="_blank"
+            rel="noopener"
+            data-evento="whatsapp_click"
+            data-origen="especificaciones"
+            class="text-dorado-400 underline underline-offset-4 transition-colors duration-200 hover:text-dorado-500"
+          >
+            Escríbenos y te lo confirmamos
+          </a>
+          .
+        </p>
+      )
+    }
+  </div>
+</section>

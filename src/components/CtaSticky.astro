@@ -1,0 +1,87 @@
+---
+import { enlaceWhatsApp } from "../data/proyecto";
+import Icono from "./Icono.astro";
+
+/**
+ * Barra CTA fija en móvil. Solo móvil: en escritorio el header ya está siempre
+ * visible y una barra inferior sería ruido.
+ *
+ * Aparece tras el 25 % de scroll y se esconde cuando el formulario está en
+ * pantalla: si el visitante ya está rellenando, un botón que le dice "agenda
+ * una visita" estorba en vez de ayudar.
+ */
+
+const wa = enlaceWhatsApp();
+---
+
+<div
+  id="cta-sticky"
+  data-visible="false"
+  class="fixed inset-x-0 bottom-0 z-20 border-t border-dorado-500/25 bg-verde-900/95 backdrop-blur-md transition-transform duration-300 data-[visible=false]:translate-y-full sm:hidden"
+>
+  <div class="flex items-center gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+    <a
+      href={wa}
+      target="_blank"
+      rel="noopener"
+      data-evento="whatsapp_click"
+      data-origen="cta-sticky"
+      class="inline-flex flex-1 items-center justify-center gap-2 rounded-sm border border-dorado-400 px-4 py-3 font-sans text-[0.7rem] font-medium tracking-[0.12em] text-dorado-400 uppercase"
+    >
+      <Icono nombre="whatsapp" tamano={16} />
+      WhatsApp
+    </a>
+
+    <a
+      href="#contacto"
+      data-evento="cta_sticky_agendar"
+      class="inline-flex flex-1 items-center justify-center rounded-sm bg-dorado-400 px-4 py-3 font-sans text-[0.7rem] font-medium tracking-[0.12em] text-verde-900 uppercase"
+    >
+      Agendar visita
+    </a>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    var barra = document.getElementById("cta-sticky");
+    if (!barra) return;
+
+    var formulario = document.getElementById("contacto");
+    var formularioVisible = false;
+
+    /* El formulario en pantalla oculta la barra, tenga el scroll donde tenga */
+    if (formulario) {
+      new IntersectionObserver(
+        function (entradas) {
+          formularioVisible = entradas[0].isIntersecting;
+          actualizar();
+        },
+        { threshold: 0.15 }
+      ).observe(formulario);
+    }
+
+    function actualizar() {
+      var alcance = document.documentElement.scrollHeight - innerHeight;
+      var recorrido = alcance > 0 ? scrollY / alcance : 0;
+      barra.dataset.visible = String(recorrido > 0.25 && !formularioVisible);
+    }
+
+    /* rAF para no recalcular el layout en cada píxel desplazado */
+    var pendiente = false;
+    addEventListener(
+      "scroll",
+      function () {
+        if (pendiente) return;
+        pendiente = true;
+        requestAnimationFrame(function () {
+          actualizar();
+          pendiente = false;
+        });
+      },
+      { passive: true }
+    );
+
+    actualizar();
+  })();
+</script>

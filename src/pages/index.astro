@@ -1,0 +1,38 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { proyecto, formatearNumero, formatearValorM2 } from "../data/proyecto";
+
+// TODO (Etapa 1): reemplazar por los componentes de sección en el orden definido:
+// Header, Hero, DatosClave, Ubicacion, Tour360, Galeria, Lotes, PorQueGuatape,
+// Especificaciones, FormularioLead, Faq, Footer, WhatsAppFlotante, CtaSticky.
+
+const title = "Lotes en Guatapé desde $45.000 el m² | Vista Hermosa";
+const description =
+  "10 lotes campestres en Guatapé con vista al embalse y a la Piedra del Peñol. Áreas de 3.500 a 10.000 m² desde $45.000/m². Recorrido virtual 360°.";
+---
+
+<BaseLayout title={title} description={description}>
+  <main id="contenido" class="min-h-svh bg-verde-800 px-6 py-24 text-dorado-400">
+    <div class="mx-auto max-w-3xl">
+      <p class="filete-seccion text-dorado-500">Etapa 0</p>
+
+      <h1 class="mt-8 font-serif text-4xl text-crema sm:text-5xl">
+        Lotes campestres en Guatapé con vista al embalse y a la Piedra del Peñol
+      </h1>
+
+      <p class="mt-6 font-sans text-lg text-crema/80">
+        {proyecto.lotesDisponibles} lotes disponibles, áreas desde {formatearNumero(proyecto.areaMin)}
+        m² hasta {formatearNumero(proyecto.areaMax)} m², a {proyecto.tiempoAGuatape} de {proyecto.ciudad}.
+      </p>
+
+      <p class="mt-10 font-serif text-5xl text-dorado-400">
+        desde {formatearValorM2(proyecto.precioM2Min)}
+      </p>
+
+      <p class="mt-16 border-t border-dorado-500/30 pt-6 font-sans text-sm text-crema/60">
+        Andamiaje base verificado: tokens de marca, fuentes self-hosted, head SEO y JSON-LD.
+        Las secciones reales se construyen en las etapas siguientes.
+      </p>
+    </div>
+  </main>
+</BaseLayout>

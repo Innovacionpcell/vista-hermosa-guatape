@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Fuentes self-hosted (nada de Google Fonts por CDN).
+   Google sirve estas dos familias como fuentes VARIABLES: un solo .woff2 por
+   familia cubre todo el eje de peso, así que declaramos el rango 400–700.
+   Subset latin (U+0000-00FF), que cubre tildes, ñ, ¿, ¡ y el ² de m².
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/cormorant-garamond-latin-var.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/inter-latin-var.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Tokens de marca. Paleta extraída del logo real — NO modificar.
+   Tailwind 4 genera las utilidades desde estas variables:
+   --color-verde-800 → bg-verde-800, text-verde-800, border-verde-800…
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Verdes */
+  --color-verde-900: #0e1d15; /* fondos profundos, footer */
+  --color-verde-800: #162b1f; /* color base de marca — secciones oscuras, header */
+  --color-verde-700: #1f3d2c; /* superficies elevadas, cards sobre fondo oscuro */
+
+  /* Dorados — acento, nunca fondo de sección */
+  --color-dorado-400: #e3cba7; /* acento principal: textos destacados, bordes, íconos */
+  --color-dorado-500: #c8a46a; /* hover de acento, líneas divisorias */
+  --color-dorado-600: #a8823f; /* dorado sobre fondos claros (contraste AA) */
+
+  /* Neutros */
+  --color-crema: #f7f3ec; /* fondo de secciones claras */
+  --color-texto: #1a1a17; /* texto sobre crema */
+
+  /* Tipografía */
+  --font-serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+
+  /* Ritmo vertical de secciones: mucho aire, es requisito estético */
+  --spacing-seccion: 6rem;
+  --spacing-seccion-lg: 8.5rem;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Base
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* El header fijo no debe tapar el destino de las anclas */
+    scroll-padding-top: 5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-crema);
+    color: var(--color-texto);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    text-wrap: balance;
+    line-height: 1.1;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Foco dorado siempre visible — requisito de accesibilidad, no decorativo */
+  :focus-visible {
+    outline: 2px solid var(--color-dorado-400);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* Sobre fondo crema el dorado claro no da contraste: se usa el 600 */
+  .bg-crema :focus-visible {
+    outline-color: var(--color-dorado-600);
+  }
+
+  img,
+  picture,
+  svg,
+  iframe {
+    max-width: 100%;
+  }
+
+  /* Evita CLS: toda imagen con width/height declarados mantiene su caja */
+  img {
+    height: auto;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Utilidades de marca
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@utility versalitas {
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-weight: 500;
+}
+
+@layer components {
+  /* Filete dorado con el nombre de sección centrado — eco del tratamiento
+     de "GUATAPE" en el logo. Detalle de marca recurrente. */
+  .filete-seccion {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-weight: 500;
+  }
+
+  .filete-seccion::before,
+  .filete-seccion::after {
+    content: "";
+    flex: 1 1 0;
+    height: 1px;
+    background-color: currentColor;
+    opacity: 0.45;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Movimiento reducido — se respeta en todo el sitio
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# /gracias es el destino post-envío: no debe indexarse.
+Disallow: /gracias
+
+# TODO: reemplazar PENDIENTE.com por el dominio definitivo antes de publicar.
+Sitemap: https://PENDIENTE.com/sitemap-index.xml

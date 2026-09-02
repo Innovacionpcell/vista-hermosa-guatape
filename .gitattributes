@@ -1,0 +1,13 @@
+# Normaliza los finales de línea a LF dentro del repositorio.
+# Importante para .htaccess y lead.php: viajan a un servidor Linux y los CRLF
+# pueden romper directivas y cabeceras PHP.
+* text=auto eol=lf
+
+# Binarios: nunca tocar.
+*.webp binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.ico binary
+*.woff binary
+*.woff2 binary

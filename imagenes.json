@@ -1,0 +1,149 @@
+{
+  "nota": "Rutas relativas a /public/img/. Cada imagen existe en 600 / 1200 / 1920 px (sufijo -600.webp, -1200.webp, -1920.webp) salvo las panorámicas (solo -2400) y el logo. Usar srcset con esos tres tamaños y sizes acorde al layout.",
+  "logo": {
+    "principal": {
+      "src": "/img/logo/logo-vista-hermosa-guatape-512.webp",
+      "sizes_disponibles": [
+        192,
+        512
+      ],
+      "alt": "Logo Lotes Campestres Vista Hermosa Guatapé",
+      "uso": "header, footer, favicon fallback"
+    },
+    "dorado_transparente": {
+      "src": "/img/logo/logo-vista-hermosa-guatape-dorado-800.webp",
+      "alt": "Logo Vista Hermosa Guatapé en dorado",
+      "uso": "sobre fondos verde oscuro o fotografías con overlay"
+    },
+    "favicon": [
+      "/img/logo/favicon-32.png",
+      "/img/logo/apple-touch-icon.png"
+    ]
+  },
+  "og_image": {
+    "src": "/img/og-image-lotes-vista-hermosa-guatape.jpg",
+    "webp": "/img/og-image-lotes-vista-hermosa-guatape.webp",
+    "dimensiones": "1200x630"
+  },
+  "hero_recomendado": "fotos/vista-embalse-guatape-piedra-del-penol-desde-lotes",
+  "galeria": [
+    {
+      "base": "fotos/vista-embalse-guatape-piedra-del-penol-desde-lotes",
+      "grupo": "fotos",
+      "orientacion": "horizontal",
+      "destacada": true,
+      "alt": "Vista aérea del embalse de Guatapé y la Piedra del Peñol desde los lotes campestres Vista Hermosa",
+      "caption": "El embalse y la Piedra del Peñol al frente del proyecto"
+    },
+    {
+      "base": "fotos/panoramica-aerea-lotes-guatape-piedra-del-penol",
+      "grupo": "fotos",
+      "orientacion": "horizontal",
+      "alt": "Panorámica aérea del sector Vista Hermosa en Guatapé con la Piedra del Peñol al fondo",
+      "caption": "Sector Vista Hermosa, a minutos del casco urbano de Guatapé"
+    },
+    {
+      "base": "fotos/lotes-campestres-vista-hermosa-guatape-atardecer",
+      "grupo": "fotos",
+      "orientacion": "horizontal",
+      "alt": "Lotes campestres Vista Hermosa en Guatapé al atardecer con montañas de fondo",
+      "caption": "Atardecer sobre el lote"
+    },
+    {
+      "base": "fotos/vista-aerea-terreno-lotes-vista-hermosa-guatape",
+      "grupo": "fotos",
+      "orientacion": "horizontal",
+      "alt": "Vista aérea del terreno donde se desarrollan los lotes campestres Vista Hermosa en Guatapé",
+      "caption": "Topografía suave, apta para construcción"
+    },
+    {
+      "base": "fotos/topografia-lotes-campestres-guatape-vista-cenital",
+      "grupo": "fotos",
+      "orientacion": "horizontal",
+      "alt": "Vista cenital de la topografía de los lotes campestres en Guatapé, Antioquia",
+      "caption": "Vista cenital del predio"
+    },
+    {
+      "base": "fotos/bosque-nativo-lotes-campestres-guatape",
+      "grupo": "fotos",
+      "orientacion": "horizontal",
+      "alt": "Bosque nativo dentro del proyecto de lotes campestres Vista Hermosa en Guatapé",
+      "caption": "Bosque nativo conservado dentro del proyecto"
+    },
+    {
+      "base": "fotos/via-acceso-lotes-vista-hermosa-guatape",
+      "grupo": "fotos",
+      "orientacion": "horizontal",
+      "alt": "Vía de acceso a los lotes campestres Vista Hermosa en Guatapé, Antioquia",
+      "caption": "Acceso vehicular directo hasta cada lote"
+    },
+    {
+      "base": "renders/render-camino-principal-lotes-vista-hermosa-guatape",
+      "grupo": "renders",
+      "orientacion": "horizontal",
+      "destacada": true,
+      "alt": "Render del camino principal iluminado del proyecto Lotes Campestres Vista Hermosa en Guatapé",
+      "caption": "Render: vía interna iluminada del proyecto"
+    },
+    {
+      "base": "renders/render-atardecer-lotes-campestres-guatape",
+      "grupo": "renders",
+      "orientacion": "horizontal",
+      "alt": "Render al atardecer de los lotes campestres Vista Hermosa en Guatapé, Antioquia",
+      "caption": "Render: atardecer sobre el proyecto"
+    },
+    {
+      "base": "renders/render-entrada-lotes-vista-hermosa-guatape",
+      "grupo": "renders",
+      "orientacion": "horizontal",
+      "alt": "Render de la entrada al proyecto de lotes campestres Vista Hermosa en Guatapé",
+      "caption": "Render: llegada al proyecto"
+    },
+    {
+      "base": "renders/render-aereo-proyecto-lotes-campestres-guatape",
+      "grupo": "renders",
+      "orientacion": "horizontal",
+      "alt": "Render aéreo del proyecto Lotes Campestres Vista Hermosa en Guatapé con sus casas campestres",
+      "caption": "Render aéreo del conjunto"
+    },
+    {
+      "base": "renders/render-vias-internas-lotes-guatape",
+      "grupo": "renders",
+      "orientacion": "horizontal",
+      "alt": "Render de las vías internas y la distribución de los lotes campestres en Guatapé",
+      "caption": "Render: trazado de vías internas"
+    },
+    {
+      "base": "renders/render-implantacion-lotes-vista-hermosa-guatape",
+      "grupo": "renders",
+      "orientacion": "vertical",
+      "alt": "Render de implantación general del proyecto Lotes Campestres Vista Hermosa en Guatapé",
+      "caption": "Render: implantación general"
+    }
+  ],
+  "panoramicas_360_equirectangulares": [
+    {
+      "src": "/img/pano/panoramica-360-lotes-vista-hermosa-guatape-1-2400.webp",
+      "alt": "Panorámica 360 grados desde los lotes campestres Vista Hermosa en Guatapé"
+    },
+    {
+      "src": "/img/pano/panoramica-360-lotes-vista-hermosa-guatape-2-2400.webp",
+      "alt": "Panorámica 360 grados del terreno de los lotes campestres en Guatapé, Antioquia"
+    },
+    {
+      "src": "/img/pano/panoramica-360-lotes-vista-hermosa-guatape-3-2400.webp",
+      "alt": "Panorámica 360 grados del sector Vista Hermosa en Guatapé con vista al embalse"
+    }
+  ],
+  "plano_lotes": {
+    "base": "renders/plano-lotes-vista-hermosa-guatape",
+    "sizes_disponibles": [
+      600,
+      1200,
+      1920
+    ],
+    "alt": "Plano aéreo con la distribución de los 11 lotes campestres del proyecto Vista Hermosa en Guatapé",
+    "caption": "Distribución de los 11 lotes — 2 vendidos",
+    "uso": "seccion 7a, plano interactivo con hotspots"
+  }
+}

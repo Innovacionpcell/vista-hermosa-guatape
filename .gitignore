@@ -1,0 +1,30 @@
+# dependencias
+node_modules/
+
+# build
+dist/
+.astro/
+
+# entorno — NUNCA commitear credenciales ni la URL del webhook del CRM
+.env
+.env.*
+!.env.example
+
+# respaldo de leads generado por lead.php (no debe existir en el repo)
+*.jsonl
+
+# Carpeta original de assets que acompañaba al brief. Su contenido ya está
+# copiado byte a byte en public/img/, que sí se versiona porque es lo que se
+# despliega. Versionar las dos duplicaría 10 MB en el repositorio.
+public-img/
+
+# sistema
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# editores y herramientas locales
+.vscode/
+.idea/
+.claude/

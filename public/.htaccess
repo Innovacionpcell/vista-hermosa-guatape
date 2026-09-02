@@ -1,0 +1,100 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Lotes Campestres Vista Hermosa — configuración de servidor (Hostinger)
+#
+# Este archivo vive en public/ para que Astro lo copie a dist/.htaccess y viaje
+# en el mismo deploy que el resto del sitio, hasta /public_html/.htaccess.
+# Hostinger usa LiteSpeed, que interpreta las directivas de Apache que siguen.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ── 1. Redirecciones canónicas: HTTPS y sin www ────────────────────────────
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Fuerza HTTPS
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Quita el www (una sola URL canónica, coherente con <link rel="canonical">)
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# ── 2. Compresión ──────────────────────────────────────────────────────────
+# Brotli primero (mejor ratio); gzip como respaldo donde no esté disponible.
+# Las imágenes WebP y las fuentes WOFF2 ya vienen comprimidas: no se recomprimen.
+<IfModule mod_brotli.c>
+  AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/css text/xml
+  AddOutputFilterByType BROTLI_COMPRESS text/javascript application/javascript
+  AddOutputFilterByType BROTLI_COMPRESS application/json application/ld+json
+  AddOutputFilterByType BROTLI_COMPRESS application/xml application/rss+xml
+  AddOutputFilterByType BROTLI_COMPRESS image/svg+xml
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+  AddOutputFilterByType DEFLATE text/javascript application/javascript
+  AddOutputFilterByType DEFLATE application/json application/ld+json
+  AddOutputFilterByType DEFLATE application/xml application/rss+xml
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ── 3. Caché ───────────────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+  # Imágenes y fuentes: nombres estables y contenido inmutable → un año.
+  <FilesMatch "\.(webp|jpg|jpeg|png|gif|svg|ico|woff2|woff)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # Los assets con hash que genera Astro (/_astro/) también son inmutables.
+  <FilesMatch "^.*\.(css|js)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # El HTML NO se cachea de forma agresiva: debe reflejar cada deploy.
+  <FilesMatch "\.(html|xml|txt|json)$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+
+  # El endpoint del formulario nunca se cachea.
+  <FilesMatch "^lead\.php$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+  </FilesMatch>
+
+  # Cabeceras de seguridad básicas
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# ── 4. Tipos MIME ──────────────────────────────────────────────────────────
+<IfModule mod_mime.c>
+  AddType image/webp .webp
+  AddType font/woff2 .woff2
+  AddType application/ld+json .jsonld
+</IfModule>
+
+# ── 5. Página 404 propia ───────────────────────────────────────────────────
+ErrorDocument 404 /404/index.html
+
+# ── 6. Protección de archivos sensibles ────────────────────────────────────
+# .env nunca debe llegar a public_html, pero si llega, que no sea legible.
+<FilesMatch "(^\.env|^\.git|\.(jsonl|log|md)$)">
+  Require all denied
+</FilesMatch>
+
+# Impide el listado de directorios
+Options -Indexes

@@ -1,0 +1,254 @@
+---
+import { proyecto } from "../data/proyecto";
+import "../styles/global.css";
+
+export interface Props {
+  /** ≤ 60 caracteres */
+  title: string;
+  /** ≤ 155 caracteres */
+  description: string;
+  /** Solo /gracias y /404 */
+  noindex?: boolean;
+  /** Bloque JSON-LD FAQPage, se inyecta solo en la home */
+  faqSchema?: Record<string, unknown> | null;
+  /** Imagen OG específica de la página (ruta absoluta desde la raíz) */
+  ogImage?: string;
+}
+
+const {
+  title,
+  description,
+  noindex = false,
+  faqSchema = null,
+  ogImage = "/img/og-image-lotes-vista-hermosa-guatape.jpg",
+} = Astro.props;
+
+const site = Astro.site ?? new URL(proyecto.dominio);
+// La home conserva la barra final; las subrutas no. Así canonical, og:url y el
+// breadcrumb apuntan siempre a la misma cadena exacta y no se contradicen.
+const path = Astro.url.pathname;
+const canonical =
+  path === "/" ? site.href : new URL(path, site).href.replace(/\/$/, "");
+const ogImageAbs = new URL(ogImage, site).href;
+
+const { lat, lng } = proyecto.coordenadas;
+
+// ── JSON-LD ─────────────────────────────────────────────────────────────────
+// El precio declarado es SIEMPRE el del metro cuadrado, nunca un total por lote.
+// `unitText`/`unitCode: MTK` (metro cuadrado, UN/CEFACT) lo deja explícito para
+// los rastreadores: 45.000–100.000 COP por m², no por lote.
+const listingSchema = {
+  "@context": "https://schema.org",
+  "@type": "RealEstateListing",
+  name: `${proyecto.nombre}, ${proyecto.ciudad}`,
+  description,
+  url: canonical,
+  image: [
+    new URL("/img/fotos/vista-embalse-guatape-piedra-del-penol-desde-lotes-1920.webp", site).href,
+    new URL("/img/renders/render-aereo-proyecto-lotes-campestres-guatape-1920.webp", site).href,
+    new URL("/img/fotos/panoramica-aerea-lotes-guatape-piedra-del-penol-1920.webp", site).href,
+  ],
+  numberOfItems: proyecto.lotesDisponibles,
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: lat,
+    longitude: lng,
+  },
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: proyecto.ciudad,
+    addressRegion: proyecto.departamento,
+    addressCountry: "CO",
+  },
+  offers: {
+    "@type": "AggregateOffer",
+    priceCurrency: "COP",
+    lowPrice: proyecto.precioM2Min,
+    highPrice: proyecto.precioM2Max,
+    offerCount: proyecto.lotesDisponibles,
+    unitText: "m2",
+    priceSpecification: {
+      "@type": "UnitPriceSpecification",
+      priceCurrency: "COP",
+      minPrice: proyecto.precioM2Min,
+      maxPrice: proyecto.precioM2Max,
+      unitCode: "MTK",
+      unitText: "m2",
+    },
+  },
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Inicio",
+      item: site.href,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: `Lotes en ${proyecto.ciudad}`,
+      item: canonical,
+    },
+  ],
+};
+
+// ── Analítica diferida ──────────────────────────────────────────────────────
+// Si el ID está vacío no se inyecta absolutamente nada.
+const GA4_ID = import.meta.env.PUBLIC_GA4_ID ?? "";
+const PIXEL_ID = import.meta.env.PUBLIC_META_PIXEL_ID ?? "";
+const analiticaActiva = Boolean(GA4_ID || PIXEL_ID);
+---
+
+<!doctype html>
+<html lang="es-CO">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Geolocalización del proyecto -->
+    <meta name="geo.region" content="CO-ANT" />
+    <meta name="geo.placename" content={`${proyecto.ciudad}, ${proyecto.departamento}`} />
+    <meta name="geo.position" content={`${lat};${lng}`} />
+    <meta name="ICBM" content={`${lat}, ${lng}`} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_CO" />
+    <meta property="og:site_name" content={proyecto.nombre} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImageAbs} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Lotes campestres Vista Hermosa en Guatapé con vista al embalse y a la Piedra del Peñol"
+    />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageAbs} />
+
+    <!-- Identidad -->
+    <meta name="theme-color" content="#162B1F" />
+    <link rel="icon" href="/img/logo/favicon-32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/img/logo/apple-touch-icon.png" />
+
+    <!-- Fuentes self-hosted, precargadas. Ambas se usan sobre el pliegue. -->
+    <link
+      rel="preload"
+      href="/fonts/cormorant-garamond-latin-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/inter-latin-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <!-- Preloads específicos de la página (ej. la imagen del hero) -->
+    <slot name="head" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(listingSchema)} is:inline />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} is:inline />
+    {
+      faqSchema && (
+        <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} is:inline />
+      )
+    }
+  </head>
+
+  <body class="bg-crema text-texto antialiased">
+    <a
+      href="#contenido"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:rounded focus:bg-verde-800 focus:px-4 focus:py-2 focus:text-dorado-400"
+    >
+      Saltar al contenido
+    </a>
+
+    <slot />
+
+    {
+      analiticaActiva && (
+        <script is:inline define:vars={{ GA4_ID, PIXEL_ID }}>
+          /* Analítica diferida: no se carga nada hasta que la página termine de
+             cargar o el usuario interactúe, lo que ocurra primero. Así no compite
+             con el LCP ni entra en el presupuesto de JS inicial. */
+          (function () {
+            var cargado = false;
+            window.dataLayer = window.dataLayer || [];
+
+            function cargar() {
+              if (cargado) return;
+              cargado = true;
+
+              if (GA4_ID) {
+                var s = document.createElement("script");
+                s.async = true;
+                s.src = "https://www.googletagmanager.com/gtag/js?id=" + GA4_ID;
+                document.head.appendChild(s);
+                function gtag() {
+                  window.dataLayer.push(arguments);
+                }
+                window.gtag = gtag;
+                gtag("js", new Date());
+                gtag("config", GA4_ID);
+              }
+
+              if (PIXEL_ID) {
+                !(function (f, b, e, v, n, t, s) {
+                  if (f.fbq) return;
+                  n = f.fbq = function () {
+                    n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+                  };
+                  if (!f._fbq) f._fbq = n;
+                  n.push = n;
+                  n.loaded = true;
+                  n.version = "2.0";
+                  n.queue = [];
+                  t = b.createElement(e);
+                  t.async = true;
+                  t.src = v;
+                  s = b.getElementsByTagName(e)[0];
+                  s.parentNode.insertBefore(t, s);
+                })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+                window.fbq("init", PIXEL_ID);
+                window.fbq("track", "PageView");
+              }
+            }
+
+            var eventos = ["scroll", "pointerdown", "keydown", "touchstart"];
+            eventos.forEach(function (ev) {
+              addEventListener(ev, cargar, { once: true, passive: true });
+            });
+
+            if (document.readyState === "complete") {
+              setTimeout(cargar, 1200);
+            } else {
+              addEventListener("load", function () {
+                setTimeout(cargar, 1200);
+              });
+            }
+          })();
+        </script>
+      )
+    }
+  </body>
+</html>

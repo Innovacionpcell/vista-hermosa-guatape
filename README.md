@@ -5,8 +5,9 @@ a 15 minutos de Guatapé (Antioquia). Objetivo único: **captar leads calificado
 formulario y WhatsApp**.
 
 - **Stack:** Astro 5 · Tailwind CSS 4 · islas React puntuales
-- **Hosting:** Hostinger, aplicación **Node 22**, build automático en cada `push`
-- **Backend del formulario:** `/api/lead`, la única ruta que corre en servidor
+- **Hosting:** Hostinger, build automático en cada `push`. **Salida 100 % estática**
+- **Formulario:** entrega por WhatsApp. El endpoint de servidor está aparcado y
+  documentado abajo — activarlo tumbó producción una vez, leer antes de intentarlo
 
 > **La unidad comercial es el metro cuadrado.** El sitio nunca presenta un precio total
 > como cifra principal: comunica el valor por m² (desde $45.000, promedio $80.000) y el
@@ -95,103 +96,62 @@ haya subido.
 
 ## Backend del formulario
 
-El sitio corre en Hostinger como **aplicación Node 22**. Astro usa
-`@astrojs/node` en modo `standalone`: con `output: 'static'` + adaptador, **todo
-se prerenderiza salvo las rutas marcadas con `export const prerender = false`**.
-Hoy esa es una sola: `/api/lead`.
+**Estado actual: el formulario entrega el lead por WhatsApp.** No hay endpoint
+de servidor activo, y eso es deliberado.
 
-### Configuración obligatoria en hPanel
+### Por qué no hay adaptador de Node
 
-En *Websites → Node.js app*:
+Se implementó y se probó un endpoint `/api/lead` con `@astrojs/node`. Al
+desplegarlo, **producción devolvió 403 Forbidden en toda la web**.
 
-| Campo | Valor |
-|---|---|
-| Build command | `npm run build` |
-| Output directory | `dist` |
-| **Entry file** | **`dist/server/entry.mjs`** |
-| Node.js version | 22 |
+Causa: al añadir el adaptador, Astro parte la salida en `dist/client/` y
+`dist/server/`. El docroot de Hostinger sigue apuntando a `dist/`, que se quedó
+sin `index.html` → 403. De regalo, `dist/server/entry.mjs` quedaba descargable
+por HTTP. El sondeo lo dejó claro:
 
-> **El campo `Entry file` es el que hace la diferencia.** Si queda vacío,
-> Hostinger sirve solo los estáticos, no arranca proceso Node y `/api/lead`
-> devuelve 404: el formulario falla en silencio. Es exactamente lo que pasaba
-> antes de la Etapa 6.
-
-`package.json` incluye `"start": "node ./dist/server/entry.mjs"` por si el panel
-prefiere un comando de arranque en vez de un archivo de entrada.
-
-El servidor standalone lee `PORT` y `HOST` del entorno (por defecto `4321`).
-Hostinger normalmente inyecta `PORT`; si el proceso arranca pero no responde,
-es lo primero que hay que revisar.
-
-### Variables de entorno (hPanel → Environment variables)
-
-| Variable | Para qué |
-|---|---|
-| `CRM_WEBHOOK_URL` | Webhook del CRM. **Pegar aquí cuando exista.** |
-| `CRM_WEBHOOK_SECRET` | Firma HMAC-SHA256 en la cabecera `X-Signature` |
-| `LEADS_DATA_DIR` | Opcional. Por defecto `<raíz>/.data` |
-
-Ninguna lleva prefijo `PUBLIC_`, así que **Astro no las expone al navegador**.
-Se leen en cada petición: cambiar el webhook en el panel **no exige recompilar**.
-
-### Qué pasa mientras no exista el webhook
-
-Nada se pierde. El endpoint guarda **siempre** el lead en
-`<LEADS_DATA_DIR>/leads.jsonl` antes de responder, anotando el estado del CRM:
-
-| `crm` | Significa |
-|---|---|
-| `sin-configurar` | Aún no hay `CRM_WEBHOOK_URL`. Es el estado normal hoy. |
-| `enviado` | El CRM respondió 2xx |
-| `error` / `timeout` | El CRM falló. **El lead está en el archivo.** |
-
-El visitante ve éxito en los cuatro casos. Solo se le pide reintentar si fallan
-a la vez el CRM y la escritura en disco, que es el único escenario de pérdida real.
-
-Cuando el CRM exista: pegar la URL en hPanel, reiniciar la app, y reprocesar los
-leads acumulados leyendo el `.jsonl` (una línea = un lead, mismo formato que el
-payload del webhook).
-
-### Anti-abuso
-
-- **Honeypot** `website`, fuera de pantalla y del recorrido de teclado.
-- **Tiempo mínimo** de 3 s entre pintar el formulario y enviarlo.
-- **Rate limit** de 5 envíos/hora por IP, con la IP hasheada en disco.
-
-Los bots reciben `200 {ok:true}` sin que se guarde nada: un error les enseñaría
-qué cambiar, un éxito falso los deja creyendo que ganaron.
-
-### Probarlo en local
-
-```bash
-npm run build
-node ./dist/server/entry.mjs        # http://localhost:4321
-
-TS=$(( $(date +%s000) - 5000 ))
-curl -X POST http://localhost:4321/api/lead   -H 'Content-Type: application/json'   -d "{\"nombre\":\"Prueba\",\"whatsapp\":\"3105145648\",\"email\":\"a@b.co\",\"consentimiento\":true,\"website\":\"\",\"ts\":$TS}"
+```
+/                   403   dist/ sin index.html
+/client/index.html  200   el sitio se había movido un nivel abajo
+/api/lead           404   NO había proceso Node corriendo
+/server/entry.mjs   200   bundle de servidor expuesto
 ```
 
-`ts` debe ser al menos 3 s anterior a ahora, o el envío se descarta como bot.
-El lead aparece en `.data/leads.jsonl`.
+Nótese que `/api/lead` daba 404: **el proceso Node nunca llegó a arrancar**,
+porque el campo `Entry file` del panel estaba vacío. Es decir, el adaptador
+tumbó el sitio sin llegar a aportar nada.
 
-> `astro dev` **no** sirve `/api/lead` igual que producción en todos los casos:
-> para probar el endpoint de verdad, compila y arranca `entry.mjs`.
+### Cómo activar el backend (si se quiere, y en este orden)
 
-### Pendiente de verificar tras el primer deploy con Node
+El endpoint está **probado y funcionando**, aparcado en
+`src/server/lead-endpoint.ts`. Vive fuera de `src/pages/` a propósito: ahí sería
+una ruta, y una ruta con `prerender = false` exige adaptador.
 
-El `.htaccess` funcionaba con hosting estático (comprobado: las cabeceras de
-seguridad y el caché inmutable de `/img` llegaban al navegador). Con el sitio
-servido por un proceso Node, **hay que volver a comprobarlo**: si Hostinger deja
-de procesarlo, se pierden la caché inmutable de `/img` y `/fonts` y las
-cabeceras de seguridad, lo que afecta directamente al presupuesto de
-rendimiento. Comprobar con:
+1. En hPanel, rellenar **`Entry file` = `dist/server/entry.mjs`** y confirmar
+   que el proceso Node arranca y responde. **Verificar esto ANTES de tocar el
+   código.**
+2. Mover `src/server/lead-endpoint.ts` → `src/pages/api/lead.ts`
+3. Añadir `adapter: node({ mode: 'standalone' })` en `astro.config.mjs`
+4. Definir `CRM_WEBHOOK_URL`, `CRM_WEBHOOK_SECRET` y `PUBLIC_BACKEND_LEADS=1`
+5. **Comprobar que `/` sigue devolviendo 200** antes de dar el cambio por bueno
 
-```bash
-curl -sI https://lotescampestresguatape.com/img/logo/favicon-32.png | grep -i cache-control
-```
+> Si el docroot no se puede cambiar a `dist/client`, el adaptador volverá a
+> romper la web. Mejor dejarlo como está.
 
-Si no aparece `max-age=31536000, immutable`, hay que replicar esas cabeceras en
-el servidor Node.
+### Qué hace hoy el formulario
+
+Valida en cliente y abre WhatsApp con un mensaje que ya lleva **nombre, correo,
+celular, área de interés, lote e inversión estimada** — todo lo que el visitante
+configuró en el plano y la calculadora. No se pierde ningún lead y no hay
+terceros de por medio.
+
+La navegación ocurre dentro del gesto del usuario y sin `await` delante: con una
+promesa por medio, el navegador deja de tratarlo como acción del usuario y el
+bloqueador de ventanas la corta en silencio. Si aun así se bloqueara la pestaña,
+`/gracias` tiene su propio botón de WhatsApp.
+
+Lo que se pierde frente al endpoint: las **UTM no viajan** con el lead (van en
+`sessionStorage`, pero no caben en el mensaje sin ensuciarlo) y no hay registro
+automático en el CRM. Ambas cosas vuelven al activar el backend.
 
 ## TODOs pendientes de confirmar con el cliente
 

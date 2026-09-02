@@ -15,6 +15,19 @@ import Icono from "./Icono.astro";
  * El anillo de pulso se detiene tras 3 ciclos (animation-iteration-count) para
  * llamar la atención sin convertirse en un parpadeo permanente, y desaparece
  * entero con prefers-reduced-motion.
+ *
+ * DOS REGLAS DE APARICIÓN, las dos por colisión real medida a 360-390 px:
+ *
+ * 1. No aparece sobre el hero. Ahí caía justo encima del CTA "Recorrido virtual
+ *    360°" y lo volvía intocable. Subirlo no arreglaba nada: en pantallas más
+ *    bajas chocaría con el otro CTA. El hero ya tiene sus dos botones.
+ *
+ * 2. No aparece en móvil (`hidden sm:flex`). Por debajo de 640 px la barra CTA
+ *    sticky ya ofrece WhatsApp de forma permanente, así que el flotante era el
+ *    mismo botón dos veces — y encima se plantaba sobre el plano de lotes, que
+ *    SÍ es interactivo, y sobre el formulario. Las dos piezas son ahora
+ *    complementarias exactas: la barra por debajo de 640 px, el flotante por
+ *    encima. Nunca coinciden y nunca tapan contenido interactivo.
  */
 
 const wa = enlaceWhatsApp();
@@ -27,7 +40,8 @@ const wa = enlaceWhatsApp();
   data-evento="whatsapp_click"
   data-origen="flotante"
   aria-label="Escribir por WhatsApp a Vista Hermosa Guatapé"
-  class="wa-flotante group fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full border-[1.5px] border-dorado-500 bg-verde-800 text-dorado-400 shadow-lg shadow-verde-900/40 transition-colors duration-200 hover:border-dorado-400 hover:bg-verde-700 sm:h-[60px] sm:w-[60px]"
+  data-visible="false"
+  class="wa-flotante group fixed right-4 z-30 hidden h-14 w-14 sm:flex items-center justify-center rounded-full border-[1.5px] border-dorado-500 bg-verde-800 text-dorado-400 shadow-lg shadow-verde-900/40 transition-[opacity,transform,background-color,border-color] duration-300 hover:border-dorado-400 hover:bg-verde-700 data-[visible=false]:pointer-events-none data-[visible=false]:translate-y-3 data-[visible=false]:opacity-0 sm:right-5 sm:h-[60px] sm:w-[60px]"
 >
   <Icono nombre="whatsapp" tamano={26} class="relative z-10" />
 
@@ -62,6 +76,11 @@ const wa = enlaceWhatsApp();
     border-radius: 9999px;
     box-shadow: 0 0 0 0 rgba(200, 164, 106, 0.55);
     animation: pulso-dorado 2.5s ease-out 3;
+    animation-play-state: paused;
+  }
+
+  .wa-flotante[data-visible="true"]::before {
+    animation-play-state: running;
   }
 
   @keyframes pulso-dorado {
@@ -82,3 +101,27 @@ const wa = enlaceWhatsApp();
     }
   }
 </style>
+
+<script is:inline>
+  (function () {
+    var boton = document.querySelector(".wa-flotante");
+    var hero = document.getElementById("inicio");
+    if (!boton) return;
+
+    /* Sin hero (páginas /gracias y /404) el botón se muestra siempre. */
+    if (!hero) {
+      boton.dataset.visible = "true";
+      return;
+    }
+
+    new IntersectionObserver(
+      function (entradas) {
+        /* El botón aparece cuando el hero deja de estar en pantalla, para no
+           taparle los CTA. Un 15 % de umbral evita que parpadee justo en el
+           límite mientras el usuario hace scroll lento. */
+        boton.dataset.visible = String(!entradas[0].isIntersecting);
+      },
+      { threshold: 0.15 }
+    ).observe(hero);
+  })();
+</script>

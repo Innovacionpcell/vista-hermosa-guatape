@@ -27,6 +27,9 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# capturas de la auditoria movil
+capturas-movil/
+
 # editores y herramientas locales
 .vscode/
 .idea/

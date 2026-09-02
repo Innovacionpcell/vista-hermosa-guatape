@@ -117,6 +117,29 @@
   img {
     height: auto;
   }
+
+  /* Los controles nativos heredan el azul del sistema si no se les dice otra
+     cosa. El slider de la calculadora es una pieza destacada de la marca. */
+  input[type="range"] {
+    accent-color: var(--color-dorado-400);
+  }
+
+  input[type="checkbox"] {
+    accent-color: var(--color-dorado-400);
+  }
+
+  /* En móvil los controles nativos por debajo de 16px hacen que iOS haga zoom
+     automático al enfocarlos, y el usuario pierde el encuadre de la página. */
+  @media (max-width: 639px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"],
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
 }
 
 /* ───────────────────────────────────────────────────────────────────────────

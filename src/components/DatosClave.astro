@@ -45,11 +45,11 @@ const datos: Dato[] = [
 
 <section id="datos-clave" class="bg-crema" aria-label="Datos clave del proyecto">
   <div class="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-16">
-    <dl class="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4 lg:gap-x-10">
+    <dl class="grid grid-cols-2 gap-x-4 gap-y-9 sm:gap-x-6 lg:grid-cols-4 lg:gap-x-10">
       {
         datos.map((dato) => (
           <div
-            class={`flex flex-col items-start gap-3 border-l pl-5 ${
+            class={`flex flex-col items-start gap-2.5 border-l pl-3.5 sm:gap-3 sm:pl-5 ${
               dato.dominante ? "border-dorado-600" : "border-dorado-500/40"
             }`}
           >
@@ -60,10 +60,10 @@ const datos: Dato[] = [
             />
 
             <dd
-              class={`font-serif leading-none ${
+              class={`font-serif leading-tight ${
                 dato.dominante
-                  ? "text-3xl text-dorado-600 sm:text-4xl"
-                  : "text-2xl text-verde-800 sm:text-3xl"
+                  ? "text-xl text-dorado-600 sm:text-3xl lg:text-4xl"
+                  : "text-lg text-verde-800 sm:text-2xl lg:text-3xl"
               }`}
               set:html={dato.valor.replace(/m2/g, "m&sup2;")}
             />

@@ -19,14 +19,14 @@ const wa = enlaceWhatsApp();
   data-visible="false"
   class="fixed inset-x-0 bottom-0 z-20 border-t border-dorado-500/25 bg-verde-900/95 backdrop-blur-md transition-transform duration-300 data-[visible=false]:translate-y-full sm:hidden"
 >
-  <div class="flex items-center gap-3 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+  <div class="flex items-center gap-2 px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
     <a
       href={wa}
       target="_blank"
       rel="noopener"
       data-evento="whatsapp_click"
       data-origen="cta-sticky"
-      class="inline-flex flex-1 items-center justify-center gap-2 rounded-sm border border-dorado-400 px-4 py-3 font-sans text-[0.7rem] font-medium tracking-[0.12em] text-dorado-400 uppercase"
+      class="inline-flex flex-1 items-center justify-center gap-2 rounded-sm border border-dorado-400 px-2 py-3 font-sans text-[0.65rem] font-medium tracking-[0.08em] whitespace-nowrap text-dorado-400 uppercase"
     >
       <Icono nombre="whatsapp" tamano={16} />
       WhatsApp
@@ -35,7 +35,7 @@ const wa = enlaceWhatsApp();
     <a
       href="#contacto"
       data-evento="cta_sticky_agendar"
-      class="inline-flex flex-1 items-center justify-center rounded-sm bg-dorado-400 px-4 py-3 font-sans text-[0.7rem] font-medium tracking-[0.12em] text-verde-900 uppercase"
+      class="inline-flex flex-1 items-center justify-center rounded-sm bg-dorado-400 px-2 py-3 font-sans text-[0.65rem] font-medium tracking-[0.08em] whitespace-nowrap text-verde-900 uppercase"
     >
       Agendar visita
     </a>

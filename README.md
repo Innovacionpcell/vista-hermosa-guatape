@@ -94,6 +94,33 @@ haya subido.
 
 ---
 
+## Auditoría de móvil
+
+**El tráfico de esta landing es mayoritariamente móvil.** Los breakpoints de
+Tailwind no bastan: hay que medir a los anchos reales de los celulares.
+
+```bash
+npm run build
+npm run preview -- --port 4400     # en otra terminal
+npm run auditar:movil              # mide 360 y 390 px, guarda capturas
+```
+
+Reporta cualquier elemento que se salga del viewport y deja una captura por
+sección en `capturas-movil/`. Sale con código 1 si detecta desbordamiento, así
+que sirve en un hook o en CI.
+
+Dos cosas que este script existe para evitar, ambas ya sufridas:
+
+1. **Auditar "a ojo" las clases de Tailwind no detecta un desbordamiento.** Hay
+   que medir el layout renderizado.
+2. **Una captura sin emulación móvil miente.** Chrome ignora el `meta viewport`
+   en modo escritorio: la página parece rota cuando no lo está. El script activa
+   `isMobile` y `hasTouch`, sin los cuales el render no se parece a un celular.
+
+Si Chrome no está en la ruta por defecto, se indica con `CHROME_PATH`.
+
+---
+
 ## Backend del formulario
 
 **Estado actual: el formulario entrega el lead por WhatsApp.** No hay endpoint

@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "start": "node ./dist/server/entry.mjs"
+    "start": "node ./dist/server/entry.mjs",
+    "auditar:movil": "node scripts/auditar-movil.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.5",
@@ -22,6 +23,7 @@
     "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "puppeteer-core": "^25.9.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0"
   },

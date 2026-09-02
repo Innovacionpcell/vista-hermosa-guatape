@@ -29,7 +29,7 @@ import Icono from "./Icono.astro";
 
 <section
   id="inicio"
-  class="relative flex min-h-[38rem] h-svh flex-col justify-end overflow-hidden bg-verde-900"
+  class="relative flex min-h-svh flex-col justify-end overflow-hidden bg-verde-900"
 >
   {/* Fotografía a sangre. Ver la nota de z-index arriba antes de tocar esto. */}
   <picture>
@@ -53,13 +53,13 @@ import Icono from "./Icono.astro";
   >
   </div>
 
-  <div class="relative mx-auto w-full max-w-7xl px-5 pb-16 sm:px-8 sm:pb-20 lg:pb-24">
+  <div class="relative mx-auto w-full max-w-7xl px-5 pt-28 pb-14 sm:px-8 sm:pt-32 sm:pb-20 lg:pb-24">
     <p class="filete-seccion max-w-md text-dorado-400">
       {proyecto.sector} · {proyecto.ciudad}
     </p>
 
     <h1
-      class="mt-7 max-w-4xl font-serif text-[2.6rem] leading-[1.06] text-crema sm:text-6xl lg:text-7xl"
+      class="mt-7 max-w-4xl font-serif text-[2rem] leading-[1.08] text-crema sm:text-5xl lg:text-7xl"
     >
       Lotes campestres en Guatapé con vista al embalse y a la Piedra del Peñol
     </h1>
@@ -78,7 +78,7 @@ import Icono from "./Icono.astro";
         <p class="font-sans text-[0.7rem] tracking-[0.2em] text-dorado-400/80 uppercase">
           Desde
         </p>
-        <p class="mt-1.5 font-serif text-5xl leading-none text-dorado-400 sm:text-6xl">
+        <p class="mt-1.5 font-serif text-4xl leading-none text-dorado-400 sm:text-6xl">
           {formatearValorM2(proyecto.precioM2Min)}
         </p>
         <p class="mt-3 font-sans text-sm text-crema/70">

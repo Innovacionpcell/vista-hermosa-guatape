@@ -125,7 +125,7 @@ export default function Calculadora() {
     >
       <div className="grid lg:grid-cols-5">
         {/* ── Controles ────────────────────────────────────────────── */}
-        <div className="p-7 sm:p-10 lg:col-span-3">
+        <div className="p-5 sm:p-10 lg:col-span-3">
           <p className="font-sans text-[0.7rem] tracking-[0.2em] text-dorado-400/80 uppercase">
             Calcula tu inversión
           </p>
@@ -215,7 +215,7 @@ export default function Calculadora() {
               })}
             </div>
 
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
               <label htmlFor="valor-propio" className="font-sans text-xs text-crema/50">
                 O escribe otro valor
               </label>
@@ -236,13 +236,13 @@ export default function Calculadora() {
         </div>
 
         {/* ── Resultado ────────────────────────────────────────────── */}
-        <div className="flex flex-col justify-center gap-6 border-t border-dorado-500/20 bg-verde-900 p-7 sm:p-10 lg:col-span-2 lg:border-t-0 lg:border-l">
+        <div className="flex flex-col justify-center gap-6 border-t border-dorado-500/20 bg-verde-900 p-5 sm:p-10 lg:col-span-2 lg:border-t-0 lg:border-l">
           <p className="font-sans text-xs text-crema/55">
             {formatearNumero(area)} m² × {formatearCOP(valorM2)}/m²
           </p>
 
           <p
-            className="font-serif text-4xl leading-none break-words text-dorado-400 sm:text-5xl"
+            className="font-serif text-[2rem] leading-none break-all text-dorado-400 sm:text-5xl"
             aria-live="polite"
           >
             {formatearCOP(totalAnimado)}

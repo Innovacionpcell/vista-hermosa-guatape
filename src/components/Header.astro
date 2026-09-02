@@ -32,22 +32,52 @@ const wa = enlaceWhatsApp();
   class="fixed inset-x-0 top-0 z-40 transition-colors duration-300 data-[solido=true]:bg-verde-800 data-[solido=true]:shadow-[0_1px_0_0_rgba(227,203,167,0.18)]"
 >
   <div class="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
-    <!-- Logo -->
+    {/*
+      Lockup del header: emblema + nombre como texto.
+
+      El logo original es un lockup VERTICAL —emblema circular, "VISTA HERMOSA"
+      debajo y "GUATAPE" con filetes al pie—. En una barra de 80 px el conjunto
+      cabe a unos 60 px de alto, con lo que la línea "GUATAPE" queda en ~4 px:
+      ilegible a cualquier tamaño que quepa aquí. Por eso se usa solo el emblema
+      (recortado del logo dorado a un asset propio) y el nombre se compone como
+      texto en Cormorant, que además escala nítido y pesa cero.
+
+      El <img> va con alt="" a propósito: es decorativo, porque el texto de al
+      lado ya da el nombre accesible del enlace. Un alt con el nombre lo haría
+      leerse dos veces en un lector de pantalla.
+    */}
     <a
       href="#inicio"
-      class="shrink-0"
-      aria-label={`${proyecto.nombre} — inicio`}
+      class="flex shrink-0 items-center gap-3 sm:gap-4"
+      aria-label={`${proyecto.nombre}, ${proyecto.ciudad} — inicio`}
     >
       <img
-        src={logo.dorado.src}
-        alt={logo.dorado.alt}
-        width="160"
-        height="48"
-        class="h-11 w-auto sm:h-12"
+        src={logo.emblema.src}
+        alt=""
+        width="174"
+        height="160"
+        class="h-12 w-auto sm:h-14"
         loading="eager"
         fetchpriority="high"
         decoding="async"
       />
+
+      <span class="flex flex-col leading-none">
+        <span
+          class="font-serif text-[1.05rem] tracking-[0.18em] text-dorado-400 uppercase sm:text-xl"
+        >
+          Vista Hermosa
+        </span>
+        {/* Eco del tratamiento de "GUATAPE" en el logo: filetes a los lados */}
+        <span
+          aria-hidden="true"
+          class="mt-1.5 flex items-center gap-2 font-sans text-[0.5rem] tracking-[0.34em] text-dorado-500 uppercase sm:text-[0.55rem]"
+        >
+          <span class="h-px w-3 bg-dorado-500/50 sm:w-4"></span>
+          {proyecto.ciudad}
+          <span class="h-px w-3 bg-dorado-500/50 sm:w-4"></span>
+        </span>
+      </span>
     </a>
 
     <!-- Navegación de escritorio -->

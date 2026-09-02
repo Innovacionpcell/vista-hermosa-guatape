@@ -1,0 +1,318 @@
+---
+import { galeria, filtrosGaleria, src, srcset, esRender } from "../data/galeria";
+import TituloSeccion from "./TituloSeccion.astro";
+import Icono from "./Icono.astro";
+
+/**
+ * Galería tipo clúster. La pieza visual fuerte de la página.
+ *
+ * EL FILTRO NO LLEVA JS. Son tres radios visualmente ocultos y reglas `:has()`
+ * en el <style> de abajo. Accesible por teclado (es un grupo de radios nativo),
+ * sin recarga y con coste cero: ni React ni un listener.
+ *
+ * EL LIGHTBOX SÍ LLEVA JS, pero vanilla sobre <dialog> nativo, no React.
+ * Motivo: el runtime de React son ~61 KB gzip, el presupuesto entero de JS de
+ * la página, y abrir una imagen a pantalla completa es mover el foco y cambiar
+ * un `src`. React se reserva para la calculadora y el formulario, donde el
+ * estado sí es real. Ver la nota de arquitectura en Header.astro.
+ *
+ * El <dialog> nativo trae gratis lo que suele salir mal en los lightbox
+ * caseros: cierre con Escape, foco atrapado dentro del modal, `inert` sobre el
+ * resto de la página y bloqueo de scroll del fondo.
+ */
+---
+
+<section id="galeria" class="bg-crema">
+  <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
+    <TituloSeccion eyebrow="Galería" tono="claro">
+      El proyecto en fotografías y renders
+    </TituloSeccion>
+
+    <div class="galeria mt-12">
+      {/* ── Filtros: radios ocultos + etiquetas estilizadas ──────────── */}
+      <fieldset class="mb-10 flex flex-wrap items-center gap-3">
+        <legend class="sr-only">Filtrar la galería</legend>
+        {
+          filtrosGaleria.map((filtro, i) => (
+            <>
+              <input
+                type="radio"
+                name="filtro-galeria"
+                id={`filtro-${filtro.id}`}
+                value={filtro.id}
+                checked={i === 0}
+                class="sr-only"
+              />
+              <label
+                for={`filtro-${filtro.id}`}
+                class="cursor-pointer rounded-sm border border-dorado-500/40 px-4 py-2.5 font-sans text-[0.7rem] tracking-[0.16em] text-texto/70 uppercase transition-colors duration-200 hover:border-dorado-600 hover:text-verde-800"
+              >
+                {filtro.etiqueta}
+              </label>
+            </>
+          ))
+        }
+      </fieldset>
+
+      {/* ── Mosaico asimétrico ───────────────────────────────────────── */}
+      <ul class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {
+          galeria.map((item, i) => (
+            <li
+              data-grupo={item.grupo}
+              class={
+                item.destacada
+                  ? "col-span-2 row-span-2 aspect-square"
+                  : "col-span-1 aspect-[4/3]"
+              }
+            >
+              <button
+                type="button"
+                class="group relative block h-full w-full cursor-pointer overflow-hidden rounded-sm bg-verde-800 text-left"
+                data-lightbox={i}
+                aria-label={`Ampliar: ${item.caption}`}
+              >
+                <picture>
+                  <source
+                    type="image/webp"
+                    srcset={srcset(item.base)}
+                    sizes={
+                      item.destacada
+                        ? "(min-width: 1024px) 50vw, 100vw"
+                        : "(min-width: 1024px) 25vw, 50vw"
+                    }
+                  />
+                  <img
+                    src={src(item.base, item.destacada ? 1200 : 600)}
+                    alt={item.alt}
+                    width={item.ancho}
+                    height={item.alto}
+                    loading="lazy"
+                    decoding="async"
+                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-[1.04]"
+                  />
+                </picture>
+
+                {/* Degradado solo bajo el caption, para no apagar la foto */}
+                <span
+                  aria-hidden="true"
+                  class="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-verde-900/90 to-transparent"
+                />
+
+                {esRender(item) && (
+                  <span class="absolute top-3 left-3 rounded-xs border border-dorado-400/50 bg-verde-900/75 px-2 py-1 font-sans text-[0.55rem] tracking-[0.16em] text-dorado-400 uppercase backdrop-blur-sm">
+                    Render ilustrativo
+                  </span>
+                )}
+
+                {/* Caption: siempre visible en móvil, al hover en escritorio */}
+                <span
+                  class="absolute inset-x-0 bottom-0 p-3 font-sans text-xs leading-snug text-crema sm:p-4 lg:opacity-0 lg:transition-opacity lg:duration-300 lg:group-hover:opacity-100 lg:group-focus-visible:opacity-100"
+                >
+                  {item.caption}
+                </span>
+              </button>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>
+
+{/* ── Lightbox ─────────────────────────────────────────────────────── */}
+<dialog
+  id="lightbox"
+  class="m-0 max-h-none max-w-none bg-transparent p-0 backdrop:bg-verde-900/92 backdrop:backdrop-blur-sm"
+  aria-label="Imagen ampliada"
+>
+  <div class="relative flex h-svh w-screen flex-col items-center justify-center p-4 sm:p-8">
+    <button
+      id="lb-cerrar"
+      type="button"
+      class="absolute top-4 right-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-sm text-crema transition-colors duration-200 hover:text-dorado-400 sm:top-6 sm:right-6"
+      aria-label="Cerrar"
+    >
+      <Icono nombre="cerrar" tamano={26} />
+    </button>
+
+    <figure class="flex max-h-full w-full max-w-6xl flex-col items-center gap-4">
+      <img
+        id="lb-img"
+        src=""
+        alt=""
+        width="1200"
+        height="800"
+        class="max-h-[76svh] w-auto max-w-full rounded-sm object-contain"
+        decoding="async"
+      />
+      <figcaption class="flex flex-col items-center gap-2 text-center">
+        <span id="lb-caption" class="font-sans text-sm text-crema/90"></span>
+        <span
+          id="lb-sello"
+          hidden
+          class="rounded-xs border border-dorado-400/50 px-2 py-1 font-sans text-[0.55rem] tracking-[0.16em] text-dorado-400 uppercase"
+          >Render ilustrativo</span
+        >
+        <span
+          id="lb-contador"
+          class="font-sans text-[0.65rem] tracking-[0.18em] text-crema/50 uppercase"
+        ></span>
+      </figcaption>
+    </figure>
+
+    <button
+      id="lb-anterior"
+      type="button"
+      class="absolute top-1/2 left-2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-sm text-crema/70 transition-colors duration-200 hover:text-dorado-400 sm:left-6"
+      aria-label="Imagen anterior"
+    >
+      <Icono nombre="flecha-abajo" tamano={26} class="rotate-90" />
+    </button>
+    <button
+      id="lb-siguiente"
+      type="button"
+      class="absolute top-1/2 right-2 inline-flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-sm text-crema/70 transition-colors duration-200 hover:text-dorado-400 sm:right-6"
+      aria-label="Imagen siguiente"
+    >
+      <Icono nombre="flecha-abajo" tamano={26} class="-rotate-90" />
+    </button>
+  </div>
+</dialog>
+
+<style>
+  /* Filtro sin JS: el estado del radio marcado gobierna qué tiles se ven.
+     `:has()` tiene soporte en todos los navegadores objetivo; si faltara,
+     la degradación es benigna: se ven todas las imágenes. */
+  .galeria:has(#filtro-fotos:checked) li[data-grupo="renders"],
+  .galeria:has(#filtro-renders:checked) li[data-grupo="fotos"] {
+    display: none;
+  }
+
+  /* Estado visual del filtro activo */
+  .galeria input[type="radio"]:checked + label {
+    border-color: var(--color-dorado-600);
+    background-color: var(--color-verde-800);
+    color: var(--color-dorado-400);
+  }
+
+  /* El foco del teclado tiene que verse sobre la etiqueta, no sobre el
+     radio oculto, o la navegación por teclado queda ciega. */
+  .galeria input[type="radio"]:focus-visible + label {
+    outline: 2px solid var(--color-dorado-600);
+    outline-offset: 3px;
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    var dialogo = document.getElementById("lightbox");
+    if (!dialogo || typeof dialogo.showModal !== "function") return;
+
+    var img = document.getElementById("lb-img");
+    var caption = document.getElementById("lb-caption");
+    var sello = document.getElementById("lb-sello");
+    var contador = document.getElementById("lb-contador");
+    var botones = Array.prototype.slice.call(document.querySelectorAll("[data-lightbox]"));
+
+    /* Los datos se leen del DOM ya renderizado: no se duplica el manifiesto
+       en un JSON aparte que se pueda desincronizar. */
+    var items = botones.map(function (b) {
+      var i = b.querySelector("img");
+      var li = b.closest("li");
+      return {
+        src: i.currentSrc || i.src,
+        srcset: b.querySelector("source") ? b.querySelector("source").srcset : "",
+        alt: i.alt,
+        caption: b.getAttribute("aria-label").replace(/^Ampliar:\s*/, ""),
+        render: li.dataset.grupo === "renders",
+        ancho: i.width,
+        alto: i.height,
+      };
+    });
+
+    var actual = 0;
+    var disparador = null;
+
+    function pintar(i) {
+      /* Módulo con guarda para índices negativos */
+      actual = (i + items.length) % items.length;
+      var it = items[actual];
+      img.src = it.src;
+      if (it.srcset) img.srcset = it.srcset;
+      img.sizes = "90vw";
+      img.alt = it.alt;
+      img.width = it.ancho;
+      img.height = it.alto;
+      caption.textContent = it.caption;
+      sello.hidden = !it.render;
+      contador.textContent = actual + 1 + " de " + items.length;
+    }
+
+    function abrir(i) {
+      disparador = botones[i];
+      pintar(i);
+      dialogo.showModal();
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ event: "galeria_abierta", imagen: items[actual].caption });
+    }
+
+    botones.forEach(function (b, i) {
+      b.addEventListener("click", function () {
+        abrir(i);
+      });
+    });
+
+    document.getElementById("lb-cerrar").addEventListener("click", function () {
+      dialogo.close();
+    });
+    document.getElementById("lb-anterior").addEventListener("click", function () {
+      pintar(actual - 1);
+    });
+    document.getElementById("lb-siguiente").addEventListener("click", function () {
+      pintar(actual + 1);
+    });
+
+    /* Flechas del teclado. Escape ya lo gestiona <dialog> de forma nativa. */
+    dialogo.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        pintar(actual - 1);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        pintar(actual + 1);
+      }
+    });
+
+    /* Clic en el fondo para cerrar, sin cerrar al pulsar la propia imagen */
+    dialogo.addEventListener("click", function (e) {
+      if (e.target === dialogo) dialogo.close();
+    });
+
+    /* Swipe en móvil */
+    var x0 = null;
+    dialogo.addEventListener(
+      "touchstart",
+      function (e) {
+        x0 = e.changedTouches[0].clientX;
+      },
+      { passive: true }
+    );
+    dialogo.addEventListener(
+      "touchend",
+      function (e) {
+        if (x0 === null) return;
+        var dx = e.changedTouches[0].clientX - x0;
+        if (Math.abs(dx) > 50) pintar(actual + (dx < 0 ? 1 : -1));
+        x0 = null;
+      },
+      { passive: true }
+    );
+
+    /* Devolver el foco al tile de origen: sin esto, cerrar el modal deja el
+       foco en <body> y el teclado vuelve a empezar desde arriba. */
+    dialogo.addEventListener("close", function () {
+      if (disparador) disparador.focus();
+    });
+  })();
+</script>

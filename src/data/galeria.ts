@@ -220,6 +220,17 @@ export const logo = {
     src192: "/img/logo/logo-vista-hermosa-guatape-192.webp",
     alt: "Logo Lotes Campestres Vista Hermosa Guatapé",
   },
+  /**
+   * Emblema circular recortado del logo dorado. El lockup completo es vertical
+   * y su texto se vuelve ilegible por debajo de ~120 px de alto, así que en el
+   * header se usa solo el emblema y el nombre se compone como texto.
+   */
+  emblema: {
+    src: "/img/logo/logo-vista-hermosa-guatape-emblema-dorado-160.webp",
+    alt: "Emblema de Vista Hermosa Guatapé: montaña y embalse",
+    ancho: 174,
+    alto: 160,
+  },
   /** Sobre fondos verde oscuro o fotografías con overlay: header y footer. */
   dorado: {
     src: "/img/logo/logo-vista-hermosa-guatape-dorado-800.webp",

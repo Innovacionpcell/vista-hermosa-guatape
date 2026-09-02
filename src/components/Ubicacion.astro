@@ -1,0 +1,194 @@
+---
+import { proyecto, distancias } from "../data/proyecto";
+import { src, srcset } from "../data/galeria";
+import TituloSeccion from "./TituloSeccion.astro";
+import Boton from "./Boton.astro";
+import Icono from "./Icono.astro";
+
+/**
+ * Ubicación. Dos columnas: texto + distancias a la izquierda, mapa a la derecha.
+ *
+ * EL MAPA VA CON FACADE, no embebido de entrada. Un iframe de Google Maps son
+ * ~700 KB y decenas de peticiones a dominios de terceros, todo compitiendo con
+ * el LCP y sin que la mayoría de visitantes lo llegue a usar. Aquí se pinta una
+ * imagen real del predio y el iframe solo se inyecta al pulsar "Cargar mapa".
+ *
+ * La imagen de facade es la vista cenital del terreno, no una captura de Google:
+ * es material propio y además muestra lo que de verdad importa, la parcela.
+ */
+
+const { lat, lng } = proyecto.coordenadas;
+const coordenadas = `${lat}, ${lng}`;
+
+// Embed sin clave de API. `output=embed` es el modo público de Google Maps.
+const mapaEmbed = `https://maps.google.com/maps?q=${lat},${lng}&z=15&hl=es&output=embed`;
+
+const facade = "fotos/topografia-lotes-campestres-guatape-vista-cenital";
+---
+
+<section id="ubicacion" class="bg-crema">
+  <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
+    <div class="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
+      {/* ── Columna izquierda: texto y distancias ────────────────────── */}
+      <div>
+        <TituloSeccion eyebrow="Ubicación" tono="claro">
+          A 15 minutos de Guatapé, con el embalse y la Piedra del Peñol al frente
+        </TituloSeccion>
+
+        <p class="mt-7 max-w-xl font-sans text-base leading-relaxed text-texto/75">
+          El proyecto está en el sector {proyecto.sector}, en zona rural de {proyecto.ciudad},
+          {proyecto.departamento}. Desde los lotes se ve el embalse y, al fondo, la Piedra
+          del Peñol. Es campo abierto con bosque nativo, a un cuarto de hora del casco urbano.
+        </p>
+
+        <ul class="mt-10 space-y-5">
+          {
+            distancias.map((d) => (
+              <li class="flex items-start gap-4 border-b border-dorado-500/25 pb-5 last:border-0">
+                <span class="mt-0.5 shrink-0 text-dorado-600">
+                  <Icono nombre="reloj" tamano={20} />
+                </span>
+                <span class="flex flex-1 flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <span class="font-sans text-sm text-texto/70">{d.destino}</span>
+                  <span class="font-serif text-lg text-verde-800">
+                    {d.valor}
+                    {/* Los tiempos no confirmados por el cliente se marcan en
+                        pantalla, no se disimulan. Ver TODO en proyecto.ts. */}
+                    {d.pendiente && (
+                      <span
+                        class="ml-2 align-middle font-sans text-[0.6rem] tracking-[0.14em] text-dorado-600/70 uppercase"
+                        title="Dato estimado, pendiente de confirmar con el cliente"
+                      >
+                        aprox.
+                      </span>
+                    )}
+                  </span>
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+
+        {/* Coordenadas copiables */}
+        <div class="mt-10 flex flex-wrap items-center gap-4">
+          <button
+            id="copiar-coordenadas"
+            type="button"
+            data-coordenadas={coordenadas}
+            class="inline-flex items-center gap-2.5 rounded-sm border border-dorado-500/50 px-4 py-2.5 font-mono text-xs text-texto/80 transition-colors duration-200 hover:border-dorado-600 hover:text-verde-800"
+          >
+            <Icono nombre="mapa" tamano={16} class="text-dorado-600" />
+            <span>{coordenadas}</span>
+            <span
+              id="copiar-estado"
+              class="font-sans text-[0.65rem] tracking-[0.12em] text-dorado-600 uppercase"
+              >Copiar</span
+            >
+          </button>
+
+          <Boton
+            href={proyecto.googleMaps}
+            variante="oscuro"
+            target="_blank"
+            rel="noopener"
+            data-evento="mapa_externo_click"
+          >
+            Abrir en Google Maps
+          </Boton>
+        </div>
+      </div>
+
+      {/* ── Columna derecha: mapa con facade ─────────────────────────── */}
+      <div
+        id="mapa-facade"
+        class="relative aspect-[4/3] w-full overflow-hidden rounded-sm bg-verde-800 lg:aspect-[3/4] lg:max-h-[38rem]"
+      >
+        <picture>
+          <source type="image/webp" srcset={srcset(facade)} sizes="(min-width: 1024px) 50vw, 100vw" />
+          <img
+            src={src(facade, 1200)}
+            alt="Vista cenital del predio de los lotes campestres Vista Hermosa en Guatapé"
+            width="1200"
+            height="800"
+            loading="lazy"
+            decoding="async"
+            class="absolute inset-0 h-full w-full object-cover"
+          />
+        </picture>
+
+        <div aria-hidden="true" class="absolute inset-0 bg-verde-900/45"></div>
+
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-5 p-6 text-center">
+          <span class="text-dorado-400">
+            <Icono nombre="mapa" tamano={40} />
+          </span>
+          <p class="max-w-xs font-sans text-sm text-crema/85">
+            El mapa se carga solo cuando lo pides, para que la página abra rápido.
+          </p>
+          <Boton id="cargar-mapa" variante="primario">Cargar mapa</Boton>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script is:inline define:vars={{ mapaEmbed }}>
+  (function () {
+    /* ── Facade del mapa ─────────────────────────────────────────────── */
+    var contenedor = document.getElementById("mapa-facade");
+    var boton = document.getElementById("cargar-mapa");
+
+    if (contenedor && boton) {
+      boton.addEventListener("click", function () {
+        var iframe = document.createElement("iframe");
+        iframe.src = mapaEmbed;
+        iframe.title = "Mapa de la ubicación de los Lotes Campestres Vista Hermosa en Guatapé";
+        iframe.loading = "lazy";
+        iframe.referrerPolicy = "no-referrer-when-downgrade";
+        iframe.allowFullscreen = true;
+        iframe.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0";
+        contenedor.replaceChildren(iframe);
+
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({ event: "mapa_cargado" });
+      });
+    }
+
+    /* ── Copiar coordenadas ──────────────────────────────────────────── */
+    var copiar = document.getElementById("copiar-coordenadas");
+    var estado = document.getElementById("copiar-estado");
+
+    if (copiar && estado) {
+      copiar.addEventListener("click", function () {
+        var texto = copiar.dataset.coordenadas;
+        var ok = function () {
+          estado.textContent = "Copiado";
+          setTimeout(function () {
+            estado.textContent = "Copiar";
+          }, 2000);
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(texto).then(ok, function () {
+            estado.textContent = "Error";
+          });
+        } else {
+          /* Respaldo para contextos sin Clipboard API */
+          var tmp = document.createElement("textarea");
+          tmp.value = texto;
+          tmp.setAttribute("readonly", "");
+          tmp.style.cssText = "position:absolute;left:-9999px";
+          document.body.appendChild(tmp);
+          tmp.select();
+          try {
+            document.execCommand("copy");
+            ok();
+          } catch (e) {
+            estado.textContent = "Error";
+          }
+          document.body.removeChild(tmp);
+        }
+      });
+    }
+  })();
+</script>

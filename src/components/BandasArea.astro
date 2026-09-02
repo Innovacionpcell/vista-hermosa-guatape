@@ -1,0 +1,72 @@
+---
+import { bandasArea } from "../data/lotes";
+import { formatearNumero } from "../data/proyecto";
+
+/**
+ * Bandas de área. Tres cards limpias, SIN precio total.
+ *
+ * Deliberadamente no llevan cifra: el precio se comunica como valor por m² y el
+ * total lo estima el visitante en la calculadora. Poner aquí un "desde $X" por
+ * banda obligaría a inventar un valor por m² por tramo que nadie ha confirmado.
+ *
+ * Cada card preselecciona su área y lleva al formulario. Si el formulario aún
+ * no existe en la página, cae a la calculadora, que sí.
+ */
+---
+
+<div class="mt-16">
+  <h3 class="font-serif text-2xl text-crema sm:text-3xl">Elige el tamaño que necesitas</h3>
+
+  <ul class="mt-8 grid gap-4 sm:grid-cols-3">
+    {
+      bandasArea.map((banda) => (
+        <li>
+          <button
+            type="button"
+            class="group flex h-full w-full cursor-pointer flex-col items-start gap-4 rounded-sm border border-dorado-500/25 bg-verde-700/40 p-7 text-left transition-colors duration-200 hover:border-dorado-400/60 hover:bg-verde-700"
+            data-banda={banda.id}
+            data-area={banda.areaSugerida}
+          >
+            <span class="font-serif text-2xl leading-none text-dorado-400">
+              {formatearNumero(banda.min)} – {formatearNumero(banda.max)}
+              <span class="ml-1 text-lg">m²</span>
+            </span>
+
+            <span class="font-sans text-sm leading-relaxed text-crema/70">{banda.uso}</span>
+
+            <span class="mt-auto pt-2 font-sans text-[0.65rem] tracking-[0.18em] text-dorado-400/70 uppercase transition-colors duration-200 group-hover:text-dorado-400">
+              Cotizar esta banda →
+            </span>
+          </button>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<script is:inline>
+  (function () {
+    var botones = document.querySelectorAll("[data-banda]");
+
+    botones.forEach(function (boton) {
+      boton.addEventListener("click", function () {
+        var area = Number(boton.dataset.area);
+
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({ event: "banda_area_click", banda: boton.dataset.banda, area: area });
+
+        /* La calculadora y el formulario escuchan este evento y precargan */
+        window.dispatchEvent(
+          new CustomEvent("vh:area-preseleccionada", {
+            detail: { area: area, banda: boton.dataset.banda },
+          })
+        );
+
+        /* El formulario es el destino natural; mientras no exista, la
+           calculadora cumple la misma función de captar la intención. */
+        var destino = document.getElementById("contacto") || document.getElementById("calculadora");
+        if (destino) destino.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    });
+  })();
+</script>

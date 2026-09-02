@@ -1,0 +1,37 @@
+---
+import { proyecto, formatearValorM2 } from "../data/proyecto";
+import TituloSeccion from "./TituloSeccion.astro";
+import PlanoLotes from "./PlanoLotes.astro";
+import BandasArea from "./BandasArea.astro";
+import Calculadora from "./Calculadora.tsx";
+
+/**
+ * Sección de lotes y valor por m². La que convierte.
+ *
+ * Tres partes: plano interactivo → bandas de área → calculadora.
+ *
+ * El h2 contiene literalmente "lotes en Guatapé", que es la keyword primaria.
+ *
+ * La calculadora es la única isla React de la página hasta el formulario, y se
+ * monta con client:visible: React no se descarga hasta que el usuario llega
+ * aquí, así que la carga inicial de la página sigue siendo cero JS de framework.
+ */
+---
+
+<section id="lotes" class="bg-verde-800">
+  <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
+    <TituloSeccion eyebrow="Lotes y valor por m²" tono="oscuro">
+      Los lotes en Guatapé se venden por metro cuadrado
+    </TituloSeccion>
+
+    <p class="mt-7 max-w-2xl font-sans text-base leading-relaxed text-crema/70">
+      No hay un precio fijo por lote: el valor va {formatearValorM2(proyecto.precioM2Min)} en
+      adelante según el lote y su ubicación dentro del proyecto, y tú eliges el área. Explora
+      el plano, elige un tamaño y calcula tu inversión.
+    </p>
+
+    <PlanoLotes />
+    <BandasArea />
+    <Calculadora client:visible />
+  </div>
+</section>

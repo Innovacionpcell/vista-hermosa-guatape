@@ -1,0 +1,27 @@
+---
+/**
+ * Encabezado de sección: filete dorado con el nombre centrado + h2.
+ * Es el detalle de marca recurrente, eco del tratamiento de "GUATAPE" en el logo.
+ */
+export interface Props {
+  /** Texto pequeño dentro del filete */
+  eyebrow: string;
+  /** Sobre verde-800 el dorado va claro; sobre crema, el 600 (contraste AA) */
+  tono?: "oscuro" | "claro";
+  class?: string;
+  /** Centra el bloque completo */
+  centrado?: boolean;
+}
+
+const { eyebrow, tono = "oscuro", class: clase = "", centrado = false } = Astro.props;
+
+const colorFilete = tono === "oscuro" ? "text-dorado-400" : "text-dorado-600";
+const colorTitulo = tono === "oscuro" ? "text-crema" : "text-verde-800";
+---
+
+<div class={`${centrado ? "mx-auto max-w-3xl text-center" : "max-w-3xl"} ${clase}`}>
+  <p class={`filete-seccion ${colorFilete} ${centrado ? "" : "max-w-sm"}`}>{eyebrow}</p>
+  <h2 class={`mt-6 font-serif text-3xl leading-[1.12] sm:text-4xl lg:text-[2.75rem] ${colorTitulo}`}>
+    <slot />
+  </h2>
+</div>

@@ -1,0 +1,191 @@
+---
+import { lotes, PLANO, PLANO_VIEWBOX, esInteractivo, tooltipLote } from "../data/lotes";
+import { src, srcset } from "../data/galeria";
+
+/**
+ * Plano interactivo del predio.
+ *
+ * Un <svg> superpuesto al render, con un polígono por lote. El viewBox usa el
+ * mismo sistema de coordenadas en el que se trazaron los hotspots (1200×993) y
+ * `preserveAspectRatio="none"` es seguro aquí porque el contenedor siempre tiene
+ * exactamente la proporción de la imagen: el mapeo queda exacto a cualquier ancho.
+ *
+ * El tooltip NO muestra área ni precio: ese desglose no está confirmado lote por
+ * lote. Tampoco afirma disponibilidad, porque no sabemos cuáles son los dos
+ * vendidos del plano. Ver el bloque de decisiones en src/data/lotes.ts.
+ */
+---
+
+<figure class="mt-14">
+  <div
+    id="plano"
+    class="relative overflow-hidden rounded-sm bg-verde-900 touch-pan-y"
+    style={`aspect-ratio:${PLANO_VIEWBOX.ancho}/${PLANO_VIEWBOX.alto}`}
+  >
+    <picture>
+      <source type="image/webp" srcset={srcset(PLANO.base)} sizes="(min-width: 1024px) 80vw, 100vw" />
+      <img
+        src={src(PLANO.base, 1200)}
+        alt={PLANO.alt}
+        width={PLANO.ancho}
+        height={PLANO.alto}
+        loading="lazy"
+        decoding="async"
+        class="absolute inset-0 h-full w-full object-cover"
+      />
+    </picture>
+
+    <svg
+      class="absolute inset-0 h-full w-full"
+      viewBox={`0 0 ${PLANO_VIEWBOX.ancho} ${PLANO_VIEWBOX.alto}`}
+      preserveAspectRatio="none"
+      role="group"
+      aria-label="Plano interactivo: selecciona un lote para cotizarlo"
+    >
+      {
+        lotes.map((lote) => (
+          <g
+            class="hotspot"
+            data-lote={lote.etiqueta}
+            data-interactivo={String(esInteractivo(lote))}
+            role="button"
+            tabindex={esInteractivo(lote) ? 0 : -1}
+            aria-label={`${tooltipLote(lote)}. Cotizar este lote`}
+            aria-disabled={esInteractivo(lote) ? "false" : "true"}
+          >
+            <title>{tooltipLote(lote)}</title>
+            <polygon points={lote.hotspot} />
+          </g>
+        ))
+      }
+    </svg>
+
+    {/* Tooltip: se posiciona en % sobre el contenedor, así escala solo */}
+    <div
+      id="plano-tooltip"
+      role="status"
+      aria-live="polite"
+      hidden
+      class="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-sm border border-dorado-400/60 bg-verde-900/95 px-3 py-2 font-sans text-xs whitespace-nowrap text-dorado-400 backdrop-blur-sm"
+    >
+    </div>
+  </div>
+
+  <figcaption
+    class="mt-4 flex flex-wrap items-center justify-between gap-3 font-sans text-xs text-texto/55"
+  >
+    <span>{PLANO.caption}</span>
+    <span class="text-texto/40">Toca un lote para cotizarlo</span>
+  </figcaption>
+</figure>
+
+<style>
+  .hotspot polygon {
+    fill: transparent;
+    stroke: transparent;
+    stroke-width: 2;
+    transition:
+      fill 180ms ease,
+      stroke 180ms ease;
+  }
+
+  .hotspot[data-interactivo="true"] {
+    cursor: pointer;
+  }
+
+  .hotspot[data-interactivo="true"]:hover polygon,
+  .hotspot[data-interactivo="true"]:focus-visible polygon,
+  .hotspot[data-interactivo="true"][data-activo="true"] polygon {
+    fill: color-mix(in srgb, var(--color-dorado-400) 25%, transparent);
+    stroke: var(--color-dorado-400);
+  }
+
+  /* Los vendidos, cuando el cliente confirme cuáles son */
+  .hotspot[data-interactivo="false"] {
+    cursor: not-allowed;
+  }
+  .hotspot[data-interactivo="false"] polygon {
+    fill: color-mix(in srgb, #000 45%, transparent);
+    stroke: rgba(255, 255, 255, 0.35);
+  }
+
+  .hotspot:focus {
+    outline: none;
+  }
+  .hotspot:focus-visible polygon {
+    stroke-width: 3;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hotspot polygon {
+      transition: none;
+    }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    var plano = document.getElementById("plano");
+    var tooltip = document.getElementById("plano-tooltip");
+    if (!plano || !tooltip) return;
+
+    var svg = plano.querySelector("svg");
+    var grupos = Array.prototype.slice.call(plano.querySelectorAll(".hotspot"));
+    var vb = svg.viewBox.baseVal;
+
+    function mostrar(g) {
+      if (g.dataset.interactivo !== "true") return;
+      var caja = g.querySelector("polygon").getBBox();
+      /* De coordenadas del viewBox a porcentaje del contenedor: así el tooltip
+         sigue al polígono en cualquier ancho, sin recalcular en cada resize. */
+      tooltip.style.left = ((caja.x + caja.width / 2) / vb.width) * 100 + "%";
+      tooltip.style.top = (caja.y / vb.height) * 100 + "%";
+      tooltip.textContent = g.querySelector("title").textContent;
+      tooltip.hidden = false;
+      g.dataset.activo = "true";
+    }
+
+    function ocultar(g) {
+      tooltip.hidden = true;
+      if (g) delete g.dataset.activo;
+    }
+
+    function seleccionar(g) {
+      if (g.dataset.interactivo !== "true") return;
+      var lote = g.dataset.lote;
+
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ event: "lote_interes_click", lote: lote });
+
+      /* La calculadora y, más adelante, el formulario escuchan este evento */
+      window.dispatchEvent(new CustomEvent("vh:lote-seleccionado", { detail: { lote: lote } }));
+
+      var destino = document.getElementById("calculadora");
+      if (destino) destino.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    grupos.forEach(function (g) {
+      g.addEventListener("mouseenter", function () {
+        mostrar(g);
+      });
+      g.addEventListener("mouseleave", function () {
+        ocultar(g);
+      });
+      g.addEventListener("focus", function () {
+        mostrar(g);
+      });
+      g.addEventListener("blur", function () {
+        ocultar(g);
+      });
+      g.addEventListener("click", function () {
+        seleccionar(g);
+      });
+      g.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          seleccionar(g);
+        }
+      });
+    });
+  })();
+</script>

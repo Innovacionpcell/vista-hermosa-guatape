@@ -1,0 +1,92 @@
+---
+import { proyecto } from "../data/proyecto";
+import { panoramicas } from "../data/galeria";
+import TituloSeccion from "./TituloSeccion.astro";
+import Icono from "./Icono.astro";
+
+/**
+ * Recorrido virtual 360°. Ancho completo sobre verde-800.
+ *
+ * Igual que el mapa: FACADE. El tour de Panoee es una aplicación WebGL pesada;
+ * embeberla en el load inicial arruinaría el LCP para todo el mundo, incluidos
+ * los que nunca la abren. Aquí se pinta una de las panorámicas equirectangulares
+ * reales del terreno y el iframe se inyecta al pulsar play.
+ *
+ * La panorámica se muestra recortada a 16:9: es equirectangular, así que verla
+ * completa se ve deformada. Encuadrada así funciona como fotografía de portada.
+ */
+
+const pano = panoramicas[0]!;
+const tour = proyecto.tour360;
+---
+
+<section id="recorrido-360" class="bg-verde-800">
+  <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
+    <TituloSeccion eyebrow="Recorrido 360°" tono="oscuro" centrado>
+      Recorre el terreno antes de venir
+    </TituloSeccion>
+
+    <p class="mx-auto mt-6 max-w-2xl text-center font-sans text-base text-crema/70">
+      Un recorrido virtual grabado con dron sobre el predio. Mira las vistas, la
+      topografía y la orientación de cada zona desde donde estés.
+    </p>
+
+    <div
+      id="tour-facade"
+      class="relative mt-12 aspect-video w-full overflow-hidden rounded-sm bg-verde-900"
+    >
+      <img
+        src={pano.src}
+        alt={pano.alt}
+        width="2400"
+        height="1200"
+        loading="lazy"
+        decoding="async"
+        class="absolute inset-0 h-full w-full object-cover"
+      />
+
+      <div aria-hidden="true" class="absolute inset-0 bg-verde-900/40"></div>
+
+      <button
+        id="abrir-tour"
+        type="button"
+        class="group absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-6"
+        aria-label="Abrir el recorrido virtual 360° de los Lotes Campestres Vista Hermosa en Guatapé"
+      >
+        <span
+          class="flex h-20 w-20 items-center justify-center rounded-full border border-dorado-400/60 bg-verde-800/80 text-dorado-400 backdrop-blur-sm transition-colors duration-200 group-hover:border-dorado-400 group-hover:bg-verde-700 sm:h-24 sm:w-24"
+        >
+          <Icono nombre="play" tamano={30} class="ml-1" />
+        </span>
+        <span
+          class="font-sans text-[0.7rem] tracking-[0.22em] text-crema uppercase sm:text-xs"
+        >
+          Iniciar recorrido virtual
+        </span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<script is:inline define:vars={{ tour }}>
+  (function () {
+    var contenedor = document.getElementById("tour-facade");
+    var boton = document.getElementById("abrir-tour");
+    if (!contenedor || !boton) return;
+
+    boton.addEventListener("click", function () {
+      var iframe = document.createElement("iframe");
+      iframe.src = tour;
+      iframe.title =
+        "Recorrido virtual 360° de los Lotes Campestres Vista Hermosa en Guatapé";
+      iframe.loading = "lazy";
+      iframe.allowFullscreen = true;
+      iframe.setAttribute("allow", "fullscreen; accelerometer; gyroscope; xr-spatial-tracking");
+      iframe.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0";
+      contenedor.replaceChildren(iframe);
+
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ event: "tour_360_abierto" });
+    });
+  })();
+</script>

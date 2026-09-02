@@ -1,6 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { opcionesAreaInteres } from "../data/lotes";
-import { formatearCOP } from "../data/proyecto";
+import { formatearCOP, proyecto } from "../data/proyecto";
+
+/**
+ * ¿Hay endpoint de servidor disponible?
+ *
+ * Hoy NO: el sitio es 100 % estático porque el adaptador de Node partía la
+ * salida en dist/client + dist/server y tumbaba producción con un 403.
+ * Mientras tanto el formulario entrega el lead por WhatsApp, que en un sitio
+ * estático funciona y no pierde a nadie.
+ *
+ * Para activarlo, además de reactivar el endpoint (ver src/server/
+ * lead-endpoint.ts), basta definir PUBLIC_BACKEND_LEADS=1 en el panel: este
+ * componente pasa a hacer POST a /api/lead sin tocar una línea de código.
+ */
+const HAY_BACKEND = import.meta.env.PUBLIC_BACKEND_LEADS === "1";
 
 declare global {
   interface Window {
@@ -175,6 +189,28 @@ export default function FormularioLead({ politicaUrl }: Props) {
       return;
     }
 
+    window.dataLayer = window.dataLayer || [];
+
+    if (!HAY_BACKEND) {
+      /* Entrega por WhatsApp.
+         La navegación va DENTRO del gesto del usuario y sin ningún await
+         delante: si esperásemos a una promesa, el navegador dejaría de
+         considerarlo una acción del usuario y el bloqueador de ventanas la
+         cortaría en silencio, que es el peor fallo posible en un formulario.
+         Si aun así se bloqueara la pestaña nueva, /gracias tiene su propio
+         botón de WhatsApp, así que el visitante nunca queda sin salida. */
+      window.dataLayer.push({
+        event: "lead_form_submit",
+        canal: "whatsapp",
+        area_interes: campos.area_interes,
+        lote: loteInteres || null,
+        inversion_estimada: inversion,
+      });
+      window.open(enlaceConDatos(), "_blank", "noopener");
+      window.location.href = "/gracias";
+      return;
+    }
+
     setEnviando(true);
     setErrores({});
 
@@ -225,6 +261,25 @@ export default function FormularioLead({ politicaUrl }: Props) {
       });
       setEnviando(false);
     }
+  }
+
+  /** Mensaje de WhatsApp con los datos ya cualificados del visitante. */
+  function enlaceConDatos(): string {
+    const lineas = [
+      "Hola, quiero informacion sobre los Lotes Campestres Vista Hermosa en Guatape.",
+      "",
+      `Nombre: ${campos.nombre}`,
+      `Correo: ${campos.email}`,
+      `Celular: ${campos.whatsapp}`,
+      `Area de interes: ${etiquetaArea(campos.area_interes)}`,
+    ];
+    if (loteInteres) lineas.push(`Lote de interes: ${loteInteres}`);
+    if (inversion && valorM2) {
+      lineas.push(`Inversion estimada: ${formatearCOP(inversion)} a ${formatearCOP(valorM2)}/m2`);
+    }
+    if (campos.mensaje.trim()) lineas.push("", `Mensaje: ${campos.mensaje.trim()}`);
+
+    return `https://wa.me/${proyecto.whatsapp}?text=${encodeURIComponent(lineas.join("\n"))}`;
   }
 
   const hayPolitica = politicaUrl && !politicaUrl.startsWith("PENDIENTE");
@@ -398,11 +453,16 @@ export default function FormularioLead({ politicaUrl }: Props) {
           disabled={enviando}
           className="inline-flex w-full items-center justify-center rounded-sm bg-dorado-400 px-8 py-4 font-sans text-sm font-medium tracking-[0.14em] text-verde-900 uppercase transition-colors duration-200 hover:bg-dorado-500 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-dorado-400 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
-          {enviando ? "Enviando…" : "Quiero más información"}
+          {enviando ? "Enviando…" : HAY_BACKEND ? "Quiero más información" : "Enviar por WhatsApp"}
         </button>
       </form>
     </div>
   );
+}
+
+/** Etiqueta legible de una banda, para el mensaje de WhatsApp. */
+function etiquetaArea(id: string): string {
+  return opcionesAreaInteres.find((o) => o.valor === id)?.etiqueta ?? "Sin definir";
 }
 
 /** Devuelve el id de banda que corresponde a un área en m². */

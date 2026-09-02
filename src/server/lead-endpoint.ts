@@ -1,3 +1,22 @@
+/*
+ * ╔═══════════════════════════════════════════════════════════════════════╗
+ * ║  ENDPOINT APARCADO — NO ESTÁ ACTIVO                                   ║
+ * ╚═══════════════════════════════════════════════════════════════════════╝
+ *
+ * Este archivo vive FUERA de src/pages/ a propósito: ahí sería una ruta, y una
+ * ruta con `prerender = false` obliga a tener adaptador, que es justo lo que
+ * tumbó producción (ver la nota en astro.config.mjs).
+ *
+ * Está probado y funciona. Para activarlo:
+ *   1. En hPanel: "Entry file" = dist/server/entry.mjs, y confirmar que el
+ *      proceso Node arranca y responde.
+ *   2. Mover este archivo a src/pages/api/lead.ts
+ *   3. Volver a añadir `adapter: node({ mode: 'standalone' })` en astro.config.mjs
+ *   4. Definir CRM_WEBHOOK_URL y CRM_WEBHOOK_SECRET en el panel
+ *
+ * Mientras tanto, el formulario entrega el lead por WhatsApp, que en estático
+ * funciona y no pierde a nadie.
+ */
 import type { APIRoute } from "astro";
 import {
   enviarAlCrm,
@@ -7,7 +26,7 @@ import {
   superaLimite,
   validar,
   type EntradaLead,
-} from "../../lib/lead";
+} from "../lib/lead";
 
 /**
  * POST /api/lead — único endpoint del sitio.

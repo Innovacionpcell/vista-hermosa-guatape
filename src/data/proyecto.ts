@@ -33,6 +33,10 @@ export interface Proyecto {
   telefono: string;
   email: string;
   dominio: string;
+  /** URL de la política de tratamiento de datos. Mientras sea PENDIENTE, el
+   *  formulario muestra el texto de consentimiento sin enlace, en vez de
+   *  enlazar a una página que no existe. */
+  politicaDatos: string;
 }
 
 export const proyecto: Proyecto = {
@@ -64,6 +68,7 @@ export const proyecto: Proyecto = {
   telefono: "PENDIENTE", // TODO: confirmar antes de publicar
   email: "PENDIENTE", // TODO: confirmar antes de publicar
   dominio: "https://lotescampestresguatape.com",
+  politicaDatos: "PENDIENTE", // TODO: el cliente debe entregar la política (Ley 1581 de 2012)
 };
 
 /**

@@ -1,0 +1,73 @@
+---
+import { proyecto, enlaceWhatsApp, formatearValorM2 } from "../data/proyecto";
+import TituloSeccion from "./TituloSeccion.astro";
+import FormularioLead from "./FormularioLead.tsx";
+import Icono from "./Icono.astro";
+
+/**
+ * Sección de contacto. El ancla #contacto es el destino de todos los CTA:
+ * el botón del hero, las bandas de área y "Cotizar este lote".
+ */
+
+const wa = enlaceWhatsApp();
+---
+
+<section id="contacto" class="bg-verde-800">
+  <div class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
+    <div class="grid gap-12 lg:grid-cols-2 lg:gap-20">
+      {/* ── Columna izquierda: argumento y vía alterna ───────────────── */}
+      <div>
+        <TituloSeccion eyebrow="Contacto" tono="oscuro">
+          Cuéntanos qué lote te interesa
+        </TituloSeccion>
+
+        <p class="mt-7 max-w-lg font-sans text-base leading-relaxed text-crema/70">
+          Déjanos tus datos y te enviamos la información del lote que elegiste: valor por m²,
+          área disponible y cómo agendar una visita al proyecto.
+        </p>
+
+        <div class="mt-10 space-y-4">
+          <a
+            href={wa}
+            target="_blank"
+            rel="noopener"
+            data-evento="whatsapp_click"
+            data-origen="contacto"
+            class="flex items-center gap-4 rounded-sm border border-dorado-500/30 p-5 transition-colors duration-200 hover:border-dorado-400/60 hover:bg-verde-700/40"
+          >
+            <span class="text-dorado-400">
+              <Icono nombre="whatsapp" tamano={24} />
+            </span>
+            <span class="flex flex-col">
+              <span class="font-sans text-[0.65rem] tracking-[0.18em] text-crema/50 uppercase">
+                Prefiero escribir por WhatsApp
+              </span>
+              <span class="font-serif text-xl text-dorado-400">
+                {proyecto.whatsappDisplay}
+              </span>
+            </span>
+          </a>
+
+          <div class="rounded-sm border border-dorado-500/20 p-5">
+            <p class="font-sans text-[0.65rem] tracking-[0.18em] text-crema/50 uppercase">
+              Desde
+            </p>
+            <p class="mt-1 font-serif text-2xl text-dorado-400">
+              {formatearValorM2(proyecto.precioM2Min)}
+            </p>
+            <p class="mt-2 font-sans text-xs leading-relaxed text-crema/50">
+              Áreas de {proyecto.areaMin.toLocaleString("es-CO")} a {
+                proyecto.areaMax.toLocaleString("es-CO")
+              } m&sup2;. El valor por m&sup2; varía según el lote.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Columna derecha: el formulario ───────────────────────────── */}
+      <div class="rounded-sm border border-dorado-500/25 bg-verde-700/25 p-6 sm:p-9">
+        <FormularioLead politicaUrl={proyecto.politicaDatos} client:visible />
+      </div>
+    </div>
+  </div>
+</section>

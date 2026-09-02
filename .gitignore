@@ -10,7 +10,10 @@ dist/
 .env.*
 !.env.example
 
-# respaldo de leads generado por lead.php (no debe existir en el repo)
+# Datos que escribe el servidor en runtime: respaldo de leads y rate limit.
+# Viven fuera de dist/, no se sirven por HTTP y NUNCA se versionan: contienen
+# datos personales de los visitantes.
+.data/
 *.jsonl
 
 # Carpeta original de assets que acompañaba al brief. Su contenido ya está

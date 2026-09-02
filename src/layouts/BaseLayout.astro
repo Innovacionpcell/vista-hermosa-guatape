@@ -173,6 +173,55 @@ const analiticaActiva = Boolean(GA4_ID || PIXEL_ID);
         <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} is:inline />
       )
     }
+    <script is:inline>
+      /* Atribución de campaña.
+         Corre en el <head>, no cuando se hidrata el formulario: si esperásemos
+         a la isla, un visitante que llega con UTMs y salta a /gracias sin haber
+         hecho scroll hasta el formulario perdería la atribución entera.
+
+         Primer toque gana: si ya hay una campaña guardada en la sesión no se
+         pisa, para no atribuirle a una visita directa posterior el lead que
+         trajo el anuncio. Los identificadores de clic (gclid, fbclid) sí se
+         actualizan siempre, porque identifican el clic concreto. */
+      (function () {
+        try {
+          var CLAVE = "vh:atribucion";
+          var CAMPANA = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
+          var CLICS = ["gclid", "fbclid"];
+
+          var params = new URLSearchParams(location.search);
+          var guardado = {};
+          try {
+            guardado = JSON.parse(sessionStorage.getItem(CLAVE) || "{}");
+          } catch (e) {}
+
+          var teniaCampana = CAMPANA.some(function (k) {
+            return guardado[k];
+          });
+          var traeCampana = CAMPANA.some(function (k) {
+            return params.get(k);
+          });
+
+          if (traeCampana && !teniaCampana) {
+            CAMPANA.forEach(function (k) {
+              guardado[k] = params.get(k) || "";
+            });
+          }
+
+          CLICS.forEach(function (k) {
+            if (params.get(k)) guardado[k] = params.get(k);
+          });
+
+          if (!guardado.landing_url) guardado.landing_url = location.href;
+          if (!guardado.referrer) guardado.referrer = document.referrer || "";
+
+          sessionStorage.setItem(CLAVE, JSON.stringify(guardado));
+        } catch (e) {
+          /* Modo privado o almacenamiento bloqueado: el formulario funciona
+             igual, solo llega sin atribución. Nunca debe romper la página. */
+        }
+      })();
+    </script>
   </head>
 
   <body class="bg-crema text-texto antialiased">

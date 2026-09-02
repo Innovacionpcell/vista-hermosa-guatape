@@ -1,0 +1,80 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { proyecto, enlaceWhatsApp } from "../data/proyecto";
+import { logo } from "../data/galeria";
+import Boton from "../components/Boton.astro";
+import Icono from "../components/Icono.astro";
+
+/**
+ * Destino tras enviar el formulario. Lleva noindex: es una página de conversión,
+ * no de contenido, y si Google la indexa acaba apareciendo en resultados por
+ * encima de la home.
+ *
+ * Aquí se dispara la conversión de GA4 y Meta: en el destino, no en el submit,
+ * porque solo llega hasta aquí quien completó el envío de verdad.
+ */
+
+const wa = enlaceWhatsApp();
+---
+
+<BaseLayout
+  title="Gracias por tu interés | Vista Hermosa Guatapé"
+  description="Recibimos tus datos. Te contactaremos muy pronto con la información de los lotes campestres Vista Hermosa en Guatapé."
+  noindex
+>
+  <main
+    id="contenido"
+    class="flex min-h-svh flex-col items-center justify-center bg-verde-800 px-5 py-20 text-center"
+  >
+    <img
+      src={logo.emblema.src}
+      alt=""
+      width={logo.emblema.ancho}
+      height={logo.emblema.alto}
+      class="h-20 w-auto"
+      loading="eager"
+    />
+
+    <p class="filete-seccion mt-10 w-full max-w-xs text-dorado-400">Recibido</p>
+
+    <h1 class="mt-7 max-w-2xl font-serif text-4xl text-crema sm:text-5xl">
+      Gracias. Ya tenemos tus datos.
+    </h1>
+
+    <p class="mt-6 max-w-lg font-sans text-base leading-relaxed text-crema/70">
+      Un asesor de {proyecto.desarrolla} te contactará muy pronto con la información del lote
+      que te interesa. Si prefieres adelantar, escríbenos directamente por WhatsApp.
+    </p>
+
+    <div class="mt-11 flex flex-col gap-3 sm:flex-row">
+      <Boton
+        href={wa}
+        variante="primario"
+        tamano="grande"
+        target="_blank"
+        rel="noopener"
+        data-evento="whatsapp_click"
+        data-origen="gracias"
+      >
+        Escribir por WhatsApp
+      </Boton>
+      <Boton href="/" variante="secundario" tamano="grande">Volver al proyecto</Boton>
+    </div>
+
+    <a
+      href="/#recorrido-360"
+      class="mt-14 inline-flex items-center gap-2.5 font-sans text-xs tracking-[0.16em] text-crema/50 uppercase transition-colors duration-200 hover:text-dorado-400"
+    >
+      <Icono nombre="play" tamano={14} />
+      Mientras tanto, recorre el terreno en 360°
+    </a>
+  </main>
+
+  <script is:inline>
+    /* Conversión: se dispara aquí y no en el submit, porque solo llega a esta
+       página quien completó el envío. La analítica se carga de forma diferida,
+       así que se empuja a dataLayer y GA4/Pixel lo recogen cuando arranquen. */
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: "lead_conversion" });
+  </script>
+</BaseLayout>

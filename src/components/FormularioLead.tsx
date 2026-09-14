@@ -110,12 +110,38 @@ function normalizarWhatsApp(valor: string): string {
   return nacional.length === 10 ? "57" + nacional : digitos;
 }
 
+/** Claves de atribución. Es parte del contrato con n8n: van SIEMPRE las 9. */
+const CLAVES_ATRIBUCION = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+  "gclid",
+  "fbclid",
+  "referrer",
+  "landing_url",
+] as const;
+
+/**
+ * Atribución guardada en el <head> (ver BaseLayout). Se devuelven las nueve
+ * claves SIEMPRE, con "" donde no haya dato: una visita directa no trae utm_*,
+ * y si se omitieran, n8n recibiría payloads con forma distinta según el origen
+ * del visitante y el mapeo al CRM tendría que defenderse de campos ausentes.
+ */
 function leerAtribucion(): Record<string, string> {
+  let guardado: Record<string, unknown> = {};
   try {
-    return JSON.parse(sessionStorage.getItem("vh:atribucion") || "{}");
+    guardado = JSON.parse(sessionStorage.getItem("vh:atribucion") || "{}");
   } catch {
-    return {};
+    // Modo privado o almacenamiento bloqueado: se envía sin atribución, pero
+    // con las claves presentes. Nunca debe impedir el envío del lead.
   }
+  const salida: Record<string, string> = {};
+  for (const clave of CLAVES_ATRIBUCION) {
+    salida[clave] = typeof guardado[clave] === "string" ? (guardado[clave] as string) : "";
+  }
+  return salida;
 }
 
 export interface Props {

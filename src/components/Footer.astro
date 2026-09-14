@@ -1,15 +1,24 @@
 ---
 import { proyecto } from "../data/proyecto";
-import { logo } from "../data/galeria";
+import { logo, logoConstructora } from "../data/galeria";
 import Icono from "./Icono.astro";
 
 /**
  * Footer. Incluye la nota legal obligatoria y el aviso de tratamiento de datos.
  *
  * La nota legal no es decorativa: en venta de lotes sobre plano, decir que los
- * renders son ilustrativos y que áreas y valores están sujetos a verificación
+ * renders son ilustrativos y que áreas y precios están sujetos a verificación
  * es lo que separa una pieza publicitaria correcta de una oferta comercial
  * vinculante.
+ *
+ * TRES CRÉDITOS QUE NO SE PUEDEN CONFUNDIR, y por eso van en tres filas propias
+ * separadas por filetes, no apretados en una:
+ *   1. La marca del proyecto (logo Vista Hermosa), arriba con la navegación.
+ *   2. La CONSTRUCTORA (logo R&U Ingenieros), en su propia franja y con su
+ *      propio antetítulo. Es quien construye: merece peso visual propio.
+ *   3. Quien hizo el sitio (Growth Digital), en letra pequeña abajo del todo.
+ * Amontonar 2 y 3 en la misma línea haría parecer que R&U hizo la web o que
+ * Growth Digital construye lotes. En móvil cada una ocupa su fila completa.
  */
 
 const { lat, lng } = proyecto.coordenadas;
@@ -60,10 +69,6 @@ const hayGrowthUrl = !growthUrl.startsWith("PENDIENTE");
         <p class="mt-6 max-w-xs font-sans text-sm leading-relaxed text-crema/55">
           Lotes campestres en el sector {proyecto.sector}, a {proyecto.tiempoAGuatape} de{" "}
           {proyecto.ciudad}, {proyecto.departamento}.
-        </p>
-
-        <p class="mt-5 font-sans text-xs text-crema/40">
-          Desarrolla <span class="text-crema/70">{proyecto.desarrolla}</span>
         </p>
       </div>
 
@@ -124,8 +129,39 @@ const hayGrowthUrl = !growthUrl.startsWith("PENDIENTE");
       </div>
     </div>
 
+    {/* ── Constructora ───────────────────────────────────────────────── */}
+    {/* width/height son las dimensiones REALES del archivo (600×467). Con
+        `h-auto` el navegador deriva de ahí la proporción y reserva la caja antes
+        de descargar la imagen, así que el logo no empuja el footer al cargar.
+        El ancho de pantalla lo fija el CSS: 140 px en móvil, 180 px desde sm. */}
+    <div class="mt-14 border-t border-dorado-500/20 pt-10">
+      <p class="font-sans text-[0.65rem] tracking-[0.2em] text-dorado-400/70 uppercase">
+        Proyecto desarrollado por
+      </p>
+
+      <a
+        href={proyecto.constructora.url}
+        target="_blank"
+        rel="noopener"
+        data-evento="constructora_click"
+        class="mt-5 inline-block rounded-sm transition-opacity duration-200 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dorado-400"
+      >
+        <img
+          src={logoConstructora.src}
+          srcset={logoConstructora.srcset}
+          sizes="(min-width: 640px) 180px, 140px"
+          alt={logoConstructora.alt}
+          width={logoConstructora.ancho}
+          height={logoConstructora.alto}
+          loading="lazy"
+          decoding="async"
+          class="h-auto w-[140px] sm:w-[180px]"
+        />
+      </a>
+    </div>
+
     {/* ── Nota legal ─────────────────────────────────────────────────── */}
-    <div class="mt-14 space-y-3 border-t border-dorado-500/20 pt-8">
+    <div class="mt-10 space-y-3 border-t border-dorado-500/20 pt-8">
       <p class="max-w-4xl font-sans text-[0.7rem] leading-relaxed text-crema/40">
         Las imágenes de render son ilustrativas y no constituyen oferta comercial. Áreas y
         precios están sujetos a disponibilidad y a verificación en el levantamiento
@@ -143,7 +179,7 @@ const hayGrowthUrl = !growthUrl.startsWith("PENDIENTE");
     >
       <p>© {anio} {proyecto.nombre}</p>
       <p>
-        Desarrollado por{" "}
+        Sitio web por{" "}
         {
           hayGrowthUrl ? (
             <a

@@ -15,8 +15,6 @@ export interface ItemGaleria {
   /** Ruta sin sufijo de tamaño ni extensión, relativa a /img/ */
   base: string;
   grupo: GrupoGaleria;
-  /** Ocupa 2×2 en el mosaico asimétrico */
-  destacada: boolean;
   alt: string;
   caption: string;
   /** Dimensiones reales del archivo de 1200 px. Obligatorias para fijar la caja
@@ -60,7 +58,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "fotos/vista-embalse-guatape-piedra-del-penol-desde-lotes",
     grupo: "fotos",
-    destacada: true,
     alt: "Vista aérea del embalse de Guatapé y la Piedra del Peñol desde los lotes campestres Vista Hermosa",
     caption: "El embalse y la Piedra del Peñol al frente del proyecto",
     ancho: 1200,
@@ -69,7 +66,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "fotos/panoramica-aerea-lotes-guatape-piedra-del-penol",
     grupo: "fotos",
-    destacada: false,
     alt: "Panorámica aérea del sector Vista Hermosa en Guatapé con la Piedra del Peñol al fondo",
     caption: "Sector Vista Hermosa, a minutos del casco urbano de Guatapé",
     ancho: 1200,
@@ -78,7 +74,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "fotos/lotes-campestres-vista-hermosa-guatape-atardecer",
     grupo: "fotos",
-    destacada: false,
     alt: "Lotes campestres Vista Hermosa en Guatapé al atardecer con montañas de fondo",
     caption: "Atardecer sobre el lote",
     ancho: 1200,
@@ -87,7 +82,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "fotos/vista-aerea-terreno-lotes-vista-hermosa-guatape",
     grupo: "fotos",
-    destacada: false,
     alt: "Vista aérea del terreno donde se desarrollan los lotes campestres Vista Hermosa en Guatapé",
     caption: "Topografía suave, apta para construcción",
     ancho: 1200,
@@ -96,7 +90,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "fotos/topografia-lotes-campestres-guatape-vista-cenital",
     grupo: "fotos",
-    destacada: false,
     alt: "Vista cenital de la topografía de los lotes campestres en Guatapé, Antioquia",
     caption: "Vista cenital del predio",
     ancho: 1200,
@@ -105,7 +98,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "fotos/bosque-nativo-lotes-campestres-guatape",
     grupo: "fotos",
-    destacada: false,
     alt: "Bosque nativo dentro del proyecto de lotes campestres Vista Hermosa en Guatapé",
     caption: "Bosque nativo conservado dentro del proyecto",
     ancho: 1200,
@@ -114,7 +106,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "fotos/via-acceso-lotes-vista-hermosa-guatape",
     grupo: "fotos",
-    destacada: false,
     alt: "Vía de acceso a los lotes campestres Vista Hermosa en Guatapé, Antioquia",
     caption: "Acceso vehicular directo hasta cada lote",
     ancho: 1200,
@@ -123,7 +114,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "renders/render-camino-principal-lotes-vista-hermosa-guatape",
     grupo: "renders",
-    destacada: true,
     alt: "Render del camino principal iluminado del proyecto Lotes Campestres Vista Hermosa en Guatapé",
     caption: "Render: vía interna iluminada del proyecto",
     ancho: 1200,
@@ -132,7 +122,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "renders/render-atardecer-lotes-campestres-guatape",
     grupo: "renders",
-    destacada: false,
     alt: "Render al atardecer de los lotes campestres Vista Hermosa en Guatapé, Antioquia",
     caption: "Render: atardecer sobre el proyecto",
     ancho: 1200,
@@ -141,7 +130,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "renders/render-entrada-lotes-vista-hermosa-guatape",
     grupo: "renders",
-    destacada: false,
     alt: "Render de la entrada al proyecto de lotes campestres Vista Hermosa en Guatapé",
     caption: "Render: llegada al proyecto",
     ancho: 1200,
@@ -150,7 +138,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "renders/render-aereo-proyecto-lotes-campestres-guatape",
     grupo: "renders",
-    destacada: false,
     alt: "Render aéreo del proyecto Lotes Campestres Vista Hermosa en Guatapé con sus casas campestres",
     caption: "Render aéreo del conjunto",
     ancho: 1200,
@@ -159,7 +146,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "renders/render-vias-internas-lotes-guatape",
     grupo: "renders",
-    destacada: false,
     alt: "Render de las vías internas y la distribución de los lotes campestres en Guatapé",
     caption: "Render: trazado de vías internas",
     ancho: 1200,
@@ -168,7 +154,6 @@ export const galeria: ItemGaleria[] = [
   {
     base: "renders/render-implantacion-lotes-vista-hermosa-guatape",
     grupo: "renders",
-    destacada: false,
     alt: "Render de implantación general del proyecto Lotes Campestres Vista Hermosa en Guatapé",
     caption: "Render: implantación general",
     ancho: 1200,
@@ -176,16 +161,35 @@ export const galeria: ItemGaleria[] = [
   },
 ];
 
-/** Filtros de la galería. El filtro no recarga: es CSS puro o una isla mínima. */
-export interface FiltroGaleria {
-  id: "todos" | GrupoGaleria;
+/**
+ * Pestañas de la galería. SON DOS, y "fotos" va primero y activa por defecto.
+ *
+ * No hay pestaña "Todo": mezclar fotografía real con renders en una misma tira
+ * deja al visitante sin saber qué está mirando. La fotografía es la que prueba
+ * que el lote existe; el render es una promesa. Se muestran por separado y la
+ * prueba va primero.
+ */
+export interface GrupoConItems {
+  id: GrupoGaleria;
   etiqueta: string;
+  /** Etiqueta accesible del slider de esta pestaña */
+  descripcion: string;
+  items: ItemGaleria[];
 }
 
-export const filtrosGaleria: FiltroGaleria[] = [
-  { id: "todos", etiqueta: "Todo" },
-  { id: "fotos", etiqueta: "Fotografía real" },
-  { id: "renders", etiqueta: "Renders del proyecto" },
+export const gruposGaleria: GrupoConItems[] = [
+  {
+    id: "fotos",
+    etiqueta: "Fotografía real",
+    descripcion: "Fotografías reales del proyecto",
+    items: galeria.filter((i) => i.grupo === "fotos"),
+  },
+  {
+    id: "renders",
+    etiqueta: "Renders del proyecto",
+    descripcion: "Renders ilustrativos del proyecto",
+    items: galeria.filter((i) => i.grupo === "renders"),
+  },
 ];
 
 /** Imagen del hero. Es el LCP: va con loading="eager" y fetchpriority="high". */
@@ -238,6 +242,26 @@ export const logo = {
   },
   favicon: "/img/logo/favicon-32.png",
   appleTouchIcon: "/img/logo/apple-touch-icon.png",
+} as const;
+
+/**
+ * Logo de la constructora, para el crédito del footer.
+ *
+ * Es la versión con el texto en crema, no la de color: el footer es verde-900 y
+ * la de color no se lee ahí. Los archivos vienen del cliente y NO se recomprimen
+ * ni se convierten; `ancho`/`alto` son las dimensiones reales del archivo de
+ * 600 px y fijan la proporción para que el logo no genere CLS al cargar.
+ *
+ * El nombre y la URL NO están aquí: viven en `proyecto.constructora`, que es su
+ * fuente única. Aquí solo el asset.
+ */
+export const logoConstructora = {
+  src: "/img/logo/logo-ru-ingenieros-600.webp",
+  srcset:
+    "/img/logo/logo-ru-ingenieros-300.webp 300w, /img/logo/logo-ru-ingenieros-600.webp 600w",
+  alt: "R&U Ingenieros, constructora del proyecto Lotes Campestres Vista Hermosa",
+  ancho: 600,
+  alto: 467,
 } as const;
 
 export const ogImage = {

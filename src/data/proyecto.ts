@@ -44,7 +44,8 @@ export interface Proyecto {
   tour360: string;
   whatsapp: string;
   whatsappDisplay: string;
-  desarrolla: string;
+  /** Constructora del proyecto. Fuente única de su nombre y su web. */
+  constructora: { nombre: string; url: string };
   telefono: string;
   email: string;
   dominio: string;
@@ -94,7 +95,12 @@ export const proyecto: Proyecto = {
   whatsapp: "573117637010",
   whatsappDisplay: "311 763 7010",
 
-  desarrolla: "R&U Ingenieros",
+  // La firma que construye el proyecto. El enlace va SIN nofollow: es el
+  // constructor real y el enlace es legítimo, no un intercambio publicitario.
+  constructora: {
+    nombre: "R&U Ingenieros",
+    url: "https://ryuingenieros.com/",
+  },
 
   telefono: "PENDIENTE", // TODO: confirmar antes de publicar
   email: "PENDIENTE", // TODO: confirmar antes de publicar

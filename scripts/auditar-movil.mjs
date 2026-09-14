@@ -61,10 +61,31 @@ for (const ancho of ANCHOS) {
 
   const informe = await pagina.evaluate((ancho) => {
     const culpables = [];
+
+    /**
+     * ¿El elemento vive dentro de un carrusel horizontal?
+     *
+     * Las diapositivas 2..n de un slider se sitúan a la derecha del viewport a
+     * propósito: están dentro de un contenedor con scroll horizontal, se llega a
+     * ellas deslizando y NO ensanchan la página. Sin esta comprobación, la
+     * galería dispararía seis falsos positivos y ahogaría un desbordamiento de
+     * verdad entre el ruido.
+     *
+     * El propio contenedor con scroll SÍ se sigue midiendo: ese tiene que caber.
+     */
+    const dentroDeScrollHorizontal = (el) => {
+      for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+        const ox = getComputedStyle(p).overflowX;
+        if ((ox === "auto" || ox === "scroll") && p.scrollWidth > p.clientWidth) return true;
+      }
+      return false;
+    };
+
     for (const el of document.querySelectorAll("body *")) {
       const r = el.getBoundingClientRect();
       if (r.width === 0 || r.height === 0) continue;
       if (getComputedStyle(el).position === "fixed") continue;
+      if (dentroDeScrollHorizontal(el)) continue;
       if (r.right > ancho + 1) {
         culpables.push({
           etiqueta: el.tagName.toLowerCase(),

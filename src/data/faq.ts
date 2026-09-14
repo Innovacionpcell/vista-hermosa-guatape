@@ -81,7 +81,7 @@ export const faq: PreguntaFaq[] = [
   },
   {
     pregunta: "¿Se acepta financiación o pago por cuotas?",
-    respuesta: `Las condiciones de pago se acuerdan directamente con ${proyecto.desarrolla}, la firma que desarrolla el proyecto. Escríbenos por WhatsApp al ${proyecto.whatsappDisplay} y te contamos las alternativas disponibles para el lote que te interese.`,
+    respuesta: `Las condiciones de pago se acuerdan directamente con ${proyecto.constructora.nombre}, la firma que construye el proyecto. Escríbenos por WhatsApp al ${proyecto.whatsappDisplay} y te contamos las alternativas disponibles para el lote que te interese.`,
     // TODO: confirmar si existe plan de financiación y sus condiciones.
     pendienteConfirmar: true,
   },

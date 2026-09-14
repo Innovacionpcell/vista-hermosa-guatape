@@ -87,6 +87,14 @@ const listingSchema = {
     addressRegion: proyecto.departamento,
     addressCountry: "CO",
   },
+  // Quién construye el proyecto. Va como Organization con su URL para que el
+  // rastreador pueda asociar el listado con la constructora real, que es una
+  // entidad con su propio sitio.
+  provider: {
+    "@type": "Organization",
+    name: proyecto.constructora.nombre,
+    url: proyecto.constructora.url,
+  },
   offers: {
     "@type": "AggregateOffer",
     priceCurrency: "COP",

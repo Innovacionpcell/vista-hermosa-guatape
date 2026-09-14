@@ -1,24 +1,43 @@
 ---
-import { galeria, filtrosGaleria, src, srcset, esRender } from "../data/galeria";
+import { gruposGaleria, src, srcset, esRender } from "../data/galeria";
 import TituloSeccion from "./TituloSeccion.astro";
 import Icono from "./Icono.astro";
 
 /**
- * Galería tipo clúster. La pieza visual fuerte de la página.
+ * Galería: dos pestañas, un slider horizontal en cada una.
  *
- * EL FILTRO NO LLEVA JS. Son tres radios visualmente ocultos y reglas `:has()`
- * en el <style> de abajo. Accesible por teclado (es un grupo de radios nativo),
- * sin recarga y con coste cero: ni React ni un listener.
+ * DOS PESTAÑAS, NO TRES. Se quitó "Todo": mezclar fotografía real con renders en
+ * una misma tira deja al visitante sin saber qué está mirando. "Fotografía real"
+ * va primero y activa por defecto porque es la que prueba que el lote existe; el
+ * render es una promesa y va después.
  *
- * EL LIGHTBOX SÍ LLEVA JS, pero vanilla sobre <dialog> nativo, no React.
- * Motivo: el runtime de React son ~61 KB gzip, el presupuesto entero de JS de
- * la página, y abrir una imagen a pantalla completa es mover el foco y cambiar
- * un `src`. React se reserva para la calculadora y el formulario, donde el
- * estado sí es real. Ver la nota de arquitectura en Header.astro.
+ * EL SLIDER ES CSS, NO UNA LIBRERÍA. `overflow-x` + `scroll-snap-type: x
+ * mandatory` da el desplazamiento, el encaje y el swipe táctil nativo, gratis y
+ * con inercia del sistema. El JS solo añade lo que el CSS no sabe: qué
+ * diapositiva está activa (para el indicador "3 / 7"), las flechas y el reinicio
+ * al cambiar de pestaña. Sin JS la tira se sigue deslizando con el dedo.
  *
- * El <dialog> nativo trae gratis lo que suele salir mal en los lightbox
- * caseros: cierre con Escape, foco atrapado dentro del modal, `inert` sobre el
- * resto de la página y bloqueo de scroll del fondo.
+ * SIN AUTOPLAY, a propósito. En una galería de producto el ritmo lo marca quien
+ * mira: una imagen que cambia sola roba atención al CTA y obliga a perseguir la
+ * que interesaba.
+ *
+ * EL CAPTION VA DENTRO DE CADA DIAPOSITIVA, no en un hueco compartido que
+ * actualice el JS. Así siempre corresponde a la imagen que se ve —incluso a
+ * mitad de swipe o sin JS—, en vez de depender de un listener de scroll que
+ * puede ir un fotograma por detrás.
+ *
+ * NO SON role="tab". Un tablist ARIA se maneja con las flechas del teclado, y
+ * aquí las flechas mueven el slider: serían dos comportamientos peleándose por
+ * la misma tecla. Son botones normales con `aria-current`, y cada panel se
+ * oculta con el atributo `hidden`, que sí saca su contenido del árbol de
+ * accesibilidad.
+ *
+ * EL LIGHTBOX SIGUE SIENDO <dialog> NATIVO CON JS VANILLA, no React. El runtime
+ * de React son ~61 KB gzip, el presupuesto entero de JS de la página, y abrir
+ * una imagen a pantalla completa es mover el foco y cambiar un `src`. El
+ * <dialog> trae gratis lo que suele salir mal en los lightbox caseros: cierre
+ * con Escape, foco atrapado, `inert` sobre el resto y bloqueo del scroll de
+ * fondo. Ahora navega DENTRO de la pestaña abierta, no por las dos mezcladas.
  */
 ---
 
@@ -28,94 +47,117 @@ import Icono from "./Icono.astro";
       El proyecto en fotografías y renders
     </TituloSeccion>
 
-    <div class="galeria mt-12">
-      {/* ── Filtros: radios ocultos + etiquetas estilizadas ──────────── */}
-      <fieldset class="mb-10 flex flex-wrap items-center gap-3">
-        <legend class="sr-only">Filtrar la galería</legend>
+    <div class="galeria mt-12" data-galeria>
+      {/* ── Pestañas ─────────────────────────────────────────────────── */}
+      <div class="mb-9 flex flex-wrap items-center gap-3" role="group" aria-label="Tipo de imagen">
         {
-          filtrosGaleria.map((filtro, i) => (
-            <>
-              <input
-                type="radio"
-                name="filtro-galeria"
-                id={`filtro-${filtro.id}`}
-                value={filtro.id}
-                checked={i === 0}
-                class="sr-only"
-              />
-              <label
-                for={`filtro-${filtro.id}`}
-                class="cursor-pointer rounded-sm border border-dorado-500/40 px-4 py-2.5 font-sans text-[0.7rem] tracking-[0.16em] text-texto/70 uppercase transition-colors duration-200 hover:border-dorado-600 hover:text-verde-800"
-              >
-                {filtro.etiqueta}
-              </label>
-            </>
+          gruposGaleria.map((grupo, i) => (
+            <button
+              type="button"
+              data-tab={grupo.id}
+              aria-current={i === 0 ? "true" : "false"}
+              class="cursor-pointer rounded-sm border border-dorado-500/40 px-4 py-2.5 font-sans text-[0.7rem] tracking-[0.16em] text-texto/70 uppercase transition-colors duration-200 hover:border-dorado-600 hover:text-verde-800 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-dorado-600 aria-[current=true]:border-dorado-600 aria-[current=true]:bg-verde-800 aria-[current=true]:text-dorado-400"
+            >
+              {grupo.etiqueta}
+            </button>
           ))
         }
-      </fieldset>
+      </div>
 
-      {/* ── Mosaico asimétrico ───────────────────────────────────────── */}
-      <ul class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {
-          galeria.map((item, i) => (
-            <li
-              data-grupo={item.grupo}
-              class={
-                item.destacada
-                  ? "col-span-2 row-span-2 aspect-square"
-                  : "col-span-1 aspect-[4/3]"
-              }
-            >
+      {/* ── Un slider por pestaña ────────────────────────────────────── */}
+      {
+        gruposGaleria.map((grupo, indiceGrupo) => (
+          <div data-panel={grupo.id} hidden={indiceGrupo !== 0}>
+            <div class="slider relative" data-slider>
+              <ul
+                class="pista"
+                data-pista
+                tabindex="0"
+                role="group"
+                aria-label={`${grupo.descripcion}. Usa las flechas para moverte entre imágenes`}
+              >
+                {grupo.items.map((item, i) => (
+                  <li class="diapositiva" aria-label={`${i + 1} de ${grupo.items.length}`}>
+                    <button
+                      type="button"
+                      class="group relative block w-full cursor-pointer overflow-hidden rounded-sm bg-verde-800 aspect-[4/3] sm:aspect-[16/9]"
+                      data-lightbox
+                      data-grupo={grupo.id}
+                      aria-label={`Ampliar: ${item.caption}`}
+                    >
+                      <picture>
+                        <source
+                          type="image/webp"
+                          srcset={srcset(item.base)}
+                          sizes="(min-width: 1280px) 1200px, 100vw"
+                        />
+                        <img
+                          src={src(item.base, 1200)}
+                          alt={item.alt}
+                          width={item.ancho}
+                          height={item.alto}
+                          /* Solo la primera de cada pestaña es eager: es la que
+                             se ve al abrirla. El resto llega al deslizar. */
+                          loading={i === 0 ? "eager" : "lazy"}
+                          decoding="async"
+                          class="absolute inset-0 h-full w-full object-cover"
+                        />
+                      </picture>
+
+                      {esRender(item) && (
+                        <span class="absolute top-3 left-3 rounded-xs border border-dorado-400/50 bg-verde-900/75 px-2 py-1 font-sans text-[0.55rem] tracking-[0.16em] text-dorado-400 uppercase backdrop-blur-sm">
+                          Render ilustrativo
+                        </span>
+                      )}
+
+                      <span
+                        aria-hidden="true"
+                        class="absolute right-3 bottom-3 rounded-xs bg-verde-900/70 px-2 py-1 font-sans text-[0.55rem] tracking-[0.16em] text-crema/80 uppercase backdrop-blur-sm"
+                      >
+                        Ampliar
+                      </span>
+                    </button>
+
+                    <p class="mt-3 min-h-[2.75rem] font-sans text-sm leading-snug text-texto/70">
+                      {item.caption}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Flechas. Ocultas hasta que el JS marca el slider como listo:
+                  sin JS no harían nada y serían un botón muerto. */}
               <button
                 type="button"
-                class="group relative block h-full w-full cursor-pointer overflow-hidden rounded-sm bg-verde-800 text-left"
-                data-lightbox={i}
-                aria-label={`Ampliar: ${item.caption}`}
+                data-anterior
+                hidden
+                class="flecha left-3 sm:left-4"
+                aria-label="Imagen anterior"
               >
-                <picture>
-                  <source
-                    type="image/webp"
-                    srcset={srcset(item.base)}
-                    sizes={
-                      item.destacada
-                        ? "(min-width: 1024px) 50vw, 100vw"
-                        : "(min-width: 1024px) 25vw, 50vw"
-                    }
-                  />
-                  <img
-                    src={src(item.base, item.destacada ? 1200 : 600)}
-                    alt={item.alt}
-                    width={item.ancho}
-                    height={item.alto}
-                    loading="lazy"
-                    decoding="async"
-                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-[1.04]"
-                  />
-                </picture>
-
-                {/* Degradado solo bajo el caption, para no apagar la foto */}
-                <span
-                  aria-hidden="true"
-                  class="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-verde-900/90 to-transparent"
-                />
-
-                {esRender(item) && (
-                  <span class="absolute top-3 left-3 rounded-xs border border-dorado-400/50 bg-verde-900/75 px-2 py-1 font-sans text-[0.55rem] tracking-[0.16em] text-dorado-400 uppercase backdrop-blur-sm">
-                    Render ilustrativo
-                  </span>
-                )}
-
-                {/* Caption: siempre visible en móvil, al hover en escritorio */}
-                <span
-                  class="absolute inset-x-0 bottom-0 p-3 font-sans text-xs leading-snug text-crema sm:p-4 lg:opacity-0 lg:transition-opacity lg:duration-300 lg:group-hover:opacity-100 lg:group-focus-visible:opacity-100"
-                >
-                  {item.caption}
-                </span>
+                <Icono nombre="flecha-abajo" tamano={22} class="rotate-90" />
               </button>
-            </li>
-          ))
-        }
-      </ul>
+              <button
+                type="button"
+                data-siguiente
+                hidden
+                class="flecha right-3 sm:right-4"
+                aria-label="Imagen siguiente"
+              >
+                <Icono nombre="flecha-abajo" tamano={22} class="-rotate-90" />
+              </button>
+            </div>
+
+            {/* Indicador de posición */}
+            <p
+              data-indicador
+              aria-live="polite"
+              class="mt-1 font-sans text-[0.7rem] tracking-[0.18em] text-texto/45 uppercase"
+            >
+              1 / {grupo.items.length}
+            </p>
+          </div>
+        ))
+      }
     </div>
   </div>
 </section>
@@ -181,31 +223,249 @@ import Icono from "./Icono.astro";
 </dialog>
 
 <style>
-  /* Filtro sin JS: el estado del radio marcado gobierna qué tiles se ven.
-     `:has()` tiene soporte en todos los navegadores objetivo; si faltara,
-     la degradación es benigna: se ven todas las imágenes. */
-  .galeria:has(#filtro-fotos:checked) li[data-grupo="renders"],
-  .galeria:has(#filtro-renders:checked) li[data-grupo="fotos"] {
+  /* La tira. `scroll-snap-type: x mandatory` es lo que convierte un contenedor
+     con overflow en un slider: encaja en cada diapositiva y el swipe táctil sale
+     gratis, con la inercia del sistema operativo. */
+  .pista {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    /* La barra de scroll estorba: la navegación son las flechas y el dedo. */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .pista::-webkit-scrollbar {
     display: none;
   }
 
-  /* Estado visual del filtro activo */
-  .galeria input[type="radio"]:checked + label {
-    border-color: var(--color-dorado-600);
+  .pista:focus-visible {
+    outline: 2px solid var(--color-dorado-600);
+    outline-offset: 4px;
+  }
+
+  /* `flex: 0 0 100%` y no `width: 100%`: sin el `0 0` flexbox encoge las
+     diapositivas para que quepan todas y desaparece el desplazamiento. */
+  .diapositiva {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  /* LAS FLECHAS SON DE ESCRITORIO. En móvil la navegación es el dedo: el swipe
+     ya lo da el scroll-snap, y un botón encima de la foto en una pantalla de
+     360 px tapa imagen y se pulsa sin querer al deslizar.
+     El `display:none` base también cubre el caso sin JS —ahí las flechas no
+     harían nada—; el JS quita el atributo `hidden` cuando el slider está listo. */
+  .flecha {
+    display: none;
+    position: absolute;
+    top: 0;
+    /* Centrado sobre la IMAGEN, no sobre la diapositiva: el caption vive debajo
+       y con `top: 50%` las flechas bajarían hasta el texto. */
+    margin-top: calc((100% - 2.75rem - 0.75rem) / 2);
+    height: 2.75rem;
+    width: 2.75rem;
+    transform: translateY(-50%);
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    border: 1px solid color-mix(in srgb, var(--color-dorado-600) 45%, transparent);
+    background-color: color-mix(in srgb, var(--color-crema) 92%, transparent);
+    color: var(--color-verde-800);
+    backdrop-filter: blur(4px);
+    cursor: pointer;
+    transition:
+      background-color 200ms ease,
+      color 200ms ease,
+      opacity 200ms ease;
+  }
+  .flecha:hover {
     background-color: var(--color-verde-800);
     color: var(--color-dorado-400);
   }
-
-  /* El foco del teclado tiene que verse sobre la etiqueta, no sobre el
-     radio oculto, o la navegación por teclado queda ciega. */
-  .galeria input[type="radio"]:focus-visible + label {
+  .flecha:focus-visible {
     outline: 2px solid var(--color-dorado-600);
     outline-offset: 3px;
+  }
+  /* En los extremos la flecha se apaga pero NO se quita: si desapareciera, el
+     resto de controles saltaría de sitio en cada extremo de la tira. */
+  .flecha[disabled] {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  @media (min-width: 640px) {
+    .flecha {
+      display: inline-flex;
+    }
+    /* Sigue oculta hasta que el JS la habilita, y con una sola imagen. */
+    .flecha[hidden] {
+      display: none;
+    }
+  }
+
+  /* Quien pide menos movimiento no quiere un desplazamiento animado de 1200 px */
+  @media (prefers-reduced-motion: reduce) {
+    .pista {
+      scroll-behavior: auto;
+    }
   }
 </style>
 
 <script is:inline>
   (function () {
+    /* ── Slider ───────────────────────────────────────────────────────── */
+    var sinMovimiento =
+      typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    var galeria = document.querySelector("[data-galeria]");
+    if (!galeria) return;
+
+    var paneles = Array.prototype.slice.call(galeria.querySelectorAll("[data-panel]"));
+
+    paneles.forEach(function (panel) {
+      var pista = panel.querySelector("[data-pista]");
+      var anterior = panel.querySelector("[data-anterior]");
+      var siguiente = panel.querySelector("[data-siguiente]");
+      var indicador = panel.querySelector("[data-indicador]");
+      var total = pista.children.length;
+      if (total === 0) return;
+
+      /* Con una sola imagen no hay nada que deslizar: las flechas se quedan
+         ocultas y el indicador no aporta. */
+      if (total > 1) {
+        anterior.hidden = false;
+        siguiente.hidden = false;
+      }
+
+      /* EL ÍNDICE SE GUARDA, NO SE DEDUCE DEL SCROLL EN CADA CLIC.
+         Derivarlo de `scrollLeft` al pulsar parece más simple y está mal: con el
+         desplazamiento suave a medias, dos clics rápidos en la flecha leen el
+         mismo `scrollLeft` y el segundo no avanza. Y con el panel oculto
+         `clientWidth` es 0, así que la división daba NaN y el indicador escribía
+         "NaN / 6". Se guarda el índice y el scroll solo lo CORRIGE al terminar. */
+      var indice = 0;
+
+      function acotar(i) {
+        return Math.min(Math.max(i, 0), total - 1);
+      }
+
+      function pintar() {
+        indicador.textContent = indice + 1 + " / " + total;
+        anterior.disabled = indice === 0;
+        siguiente.disabled = indice === total - 1;
+      }
+
+      /* Tras un swipe, la verdad la tiene el scroll: de ahí sale el índice. */
+      function sincronizar() {
+        if (pista.clientWidth === 0) return; // panel oculto: nada que medir
+        indice = acotar(Math.round(pista.scrollLeft / pista.clientWidth));
+        pintar();
+      }
+
+      function irA(i) {
+        indice = acotar(i);
+        pista.scrollTo({
+          left: indice * pista.clientWidth,
+          behavior: sinMovimiento ? "auto" : "smooth",
+        });
+        /* Se pinta ya, sin esperar al final del desplazamiento: el indicador
+           debe responder a la pulsación, no medio segundo después. */
+        pintar();
+      }
+
+      anterior.addEventListener("click", function () {
+        irA(indice - 1);
+      });
+      siguiente.addEventListener("click", function () {
+        irA(indice + 1);
+      });
+
+      /* El swipe no pasa por irA(), así que el índice se recalcula cuando el
+         scroll PARA: con `scrollend` donde existe, y con un temporizador corto
+         donde no. En cada píxel sería recalcular cientos de veces por gesto. */
+      if ("onscrollend" in window) {
+        pista.addEventListener("scrollend", sincronizar);
+      } else {
+        var temporizador = null;
+        pista.addEventListener(
+          "scroll",
+          function () {
+            clearTimeout(temporizador);
+            temporizador = setTimeout(sincronizar, 120);
+          },
+          { passive: true }
+        );
+      }
+
+      /* Flechas del teclado. Se previene el scroll nativo para que una pulsación
+         mueva una diapositiva entera y no unos pocos píxeles. */
+      pista.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          irA(indice - 1);
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          irA(indice + 1);
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          irA(0);
+        } else if (e.key === "End") {
+          e.preventDefault();
+          irA(total - 1);
+        }
+      });
+
+      /* Al cambiar el ancho, la posición en píxeles del índice actual cambia.
+         Sin esto, girar el teléfono deja la tira a medio camino entre dos. */
+      if (typeof ResizeObserver === "function") {
+        var anchoPrevio = 0;
+        new ResizeObserver(function () {
+          if (pista.clientWidth === 0 || pista.clientWidth === anchoPrevio) return;
+          if (anchoPrevio !== 0) {
+            pista.scrollTo({ left: indice * pista.clientWidth, behavior: "auto" });
+          }
+          anchoPrevio = pista.clientWidth;
+        }).observe(pista);
+      }
+
+      panel.reiniciar = function () {
+        indice = 0;
+        pista.scrollTo({ left: 0, behavior: "auto" });
+        pintar();
+      };
+
+      pintar();
+    });
+
+    /* ── Pestañas ─────────────────────────────────────────────────────── */
+    var tabs = Array.prototype.slice.call(galeria.querySelectorAll("[data-tab]"));
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        var destino = tab.dataset.tab;
+
+        tabs.forEach(function (t) {
+          t.setAttribute("aria-current", String(t === tab));
+        });
+
+        paneles.forEach(function (panel) {
+          var activo = panel.dataset.panel === destino;
+          panel.hidden = !activo;
+          /* Volver al inicio al entrar: si no, la pestaña se abre por donde se
+             dejó y el visitante cree que se saltó las primeras imágenes. */
+          if (activo && typeof panel.reiniciar === "function") panel.reiniciar();
+        });
+
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({ event: "galeria_filtro", grupo: destino });
+      });
+    });
+
+    /* ── Lightbox ─────────────────────────────────────────────────────── */
     var dialogo = document.getElementById("lightbox");
     if (!dialogo || typeof dialogo.showModal !== "function") return;
 
@@ -213,31 +473,34 @@ import Icono from "./Icono.astro";
     var caption = document.getElementById("lb-caption");
     var sello = document.getElementById("lb-sello");
     var contador = document.getElementById("lb-contador");
-    var botones = Array.prototype.slice.call(document.querySelectorAll("[data-lightbox]"));
 
-    /* Los datos se leen del DOM ya renderizado: no se duplica el manifiesto
-       en un JSON aparte que se pueda desincronizar. */
-    var items = botones.map(function (b) {
+    /* Los datos se leen del DOM ya renderizado: no se duplica el manifiesto en
+       un JSON aparte que se pueda desincronizar. Se agrupan POR PESTAÑA, para
+       que las flechas del lightbox no salten de las fotos a los renders. */
+    var porGrupo = {};
+    Array.prototype.slice.call(galeria.querySelectorAll("[data-lightbox]")).forEach(function (b) {
+      var g = b.dataset.grupo;
       var i = b.querySelector("img");
-      var li = b.closest("li");
-      return {
+      (porGrupo[g] = porGrupo[g] || []).push({
+        boton: b,
         src: i.currentSrc || i.src,
         srcset: b.querySelector("source") ? b.querySelector("source").srcset : "",
         alt: i.alt,
         caption: b.getAttribute("aria-label").replace(/^Ampliar:\s*/, ""),
-        render: li.dataset.grupo === "renders",
+        render: g === "renders",
         ancho: i.width,
         alto: i.height,
-      };
+      });
     });
 
+    var lista = [];
     var actual = 0;
     var disparador = null;
 
     function pintar(i) {
       /* Módulo con guarda para índices negativos */
-      actual = (i + items.length) % items.length;
-      var it = items[actual];
+      actual = (i + lista.length) % lista.length;
+      var it = lista[actual];
       img.src = it.src;
       if (it.srcset) img.srcset = it.srcset;
       img.sizes = "90vw";
@@ -246,20 +509,19 @@ import Icono from "./Icono.astro";
       img.height = it.alto;
       caption.textContent = it.caption;
       sello.hidden = !it.render;
-      contador.textContent = actual + 1 + " de " + items.length;
+      contador.textContent = actual + 1 + " de " + lista.length;
     }
 
-    function abrir(i) {
-      disparador = botones[i];
-      pintar(i);
-      dialogo.showModal();
-      window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push({ event: "galeria_abierta", imagen: items[actual].caption });
-    }
-
-    botones.forEach(function (b, i) {
-      b.addEventListener("click", function () {
-        abrir(i);
+    Object.keys(porGrupo).forEach(function (g) {
+      porGrupo[g].forEach(function (it, i) {
+        it.boton.addEventListener("click", function () {
+          lista = porGrupo[g];
+          disparador = it.boton;
+          pintar(i);
+          dialogo.showModal();
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({ event: "galeria_abierta", imagen: lista[actual].caption });
+        });
       });
     });
 
@@ -309,8 +571,8 @@ import Icono from "./Icono.astro";
       { passive: true }
     );
 
-    /* Devolver el foco al tile de origen: sin esto, cerrar el modal deja el
-       foco en <body> y el teclado vuelve a empezar desde arriba. */
+    /* Devolver el foco a la diapositiva de origen: sin esto, cerrar el modal
+       deja el foco en <body> y el teclado vuelve a empezar desde arriba. */
     dialogo.addEventListener("close", function () {
       if (disparador) disparador.focus();
     });

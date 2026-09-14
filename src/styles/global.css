@@ -119,11 +119,9 @@
   }
 
   /* Los controles nativos heredan el azul del sistema si no se les dice otra
-     cosa. El slider de la calculadora es una pieza destacada de la marca. */
-  input[type="range"] {
-    accent-color: var(--color-dorado-400);
-  }
-
+     cosa. Aquí solo queda el checkbox del consentimiento: el <input type=range>
+     desapareció con el slider de la calculadora, que ahora es un selector de
+     lote real. */
   input[type="checkbox"] {
     accent-color: var(--color-dorado-400);
   }

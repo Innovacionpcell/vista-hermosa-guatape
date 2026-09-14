@@ -16,10 +16,16 @@ import WhatsAppFlotante from "../components/WhatsAppFlotante.astro";
 import CtaSticky from "../components/CtaSticky.astro";
 import { faqSchema } from "../data/faq";
 import { hero, src, srcset } from "../data/galeria";
+import { inventario, proyecto, formatearCOP, formatearNumero } from "../data/proyecto";
 
-const title = "Lotes en Guatapé desde $45.000 el m² | Vista Hermosa";
-const description =
-  "10 lotes campestres en Guatapé con vista al embalse y a la Piedra del Peñol. Áreas de 3.500 a 10.000 m² desde $45.000/m². Recorrido virtual 360°.";
+/* El title lleva la cifra de CAMPAÑA (la misma del h1), no el mínimo calculado
+   del inventario: el resultado de búsqueda y el titular de la página tienen que
+   decir el mismo "desde". El rango de áreas sí es el real, derivado de lotes.ts.
+   Ver el bloque "CIFRAS DE CAMPAÑA" en src/data/proyecto.ts. */
+const desde = formatearCOP(proyecto.precioDesdeComercial);
+
+const title = `Lotes en Guatapé desde ${desde} | Vista Hermosa`;
+const description = `${inventario.disponibles} lotes campestres en Guatapé con vista al embalse y a la Piedra del Peñol. Áreas de ${formatearNumero(inventario.areaMin)} a ${formatearNumero(inventario.areaMax)} m², desde ${desde}. Recorrido virtual 360°.`;
 ---
 
 <BaseLayout title={title} description={description} faqSchema={faqSchema()}>

@@ -1,12 +1,18 @@
 ---
-import { proyecto, enlaceWhatsApp, formatearValorM2 } from "../data/proyecto";
+import {
+  proyecto,
+  inventario,
+  enlaceWhatsApp,
+  formatearCOP,
+  formatearNumero,
+} from "../data/proyecto";
 import TituloSeccion from "./TituloSeccion.astro";
 import FormularioLead from "./FormularioLead.tsx";
 import Icono from "./Icono.astro";
 
 /**
  * Sección de contacto. El ancla #contacto es el destino de todos los CTA:
- * el botón del hero, las bandas de área y "Cotizar este lote".
+ * el botón del hero, el "Me interesa" de cada lote y el "Cotizar" del simulador.
  */
 
 const wa = enlaceWhatsApp();
@@ -22,8 +28,8 @@ const wa = enlaceWhatsApp();
         </TituloSeccion>
 
         <p class="mt-7 max-w-lg font-sans text-base leading-relaxed text-crema/70">
-          Déjanos tus datos y te enviamos la información del lote que elegiste: valor por m²,
-          área disponible y cómo agendar una visita al proyecto.
+          Déjanos tus datos y te enviamos la información del lote que elegiste: precio,
+          área, condiciones de pago y cómo agendar una visita al proyecto.
         </p>
 
         <div class="mt-10 space-y-4">
@@ -48,17 +54,19 @@ const wa = enlaceWhatsApp();
             </span>
           </a>
 
+          {/* Cifra de CAMPAÑA, la misma del hero y del title. Ver el bloque
+              "CIFRAS DE CAMPAÑA" en src/data/proyecto.ts. */}
           <div class="rounded-sm border border-dorado-500/20 p-5">
             <p class="font-sans text-[0.65rem] tracking-[0.18em] text-crema/50 uppercase">
               Desde
             </p>
             <p class="mt-1 font-serif text-2xl text-dorado-400">
-              {formatearValorM2(proyecto.precioM2Min)}
+              {formatearCOP(proyecto.precioDesdeComercial)}
             </p>
             <p class="mt-2 font-sans text-xs leading-relaxed text-crema/50">
-              Áreas de {proyecto.areaMin.toLocaleString("es-CO")} a {
-                proyecto.areaMax.toLocaleString("es-CO")
-              } m&sup2;. El valor por m&sup2; varía según el lote.
+              {inventario.disponibles} lotes de {formatearNumero(inventario.areaMin)} a {
+                formatearNumero(inventario.areaMax)
+              } m&sup2;. Cada lote tiene su propio precio.
             </p>
           </div>
         </div>

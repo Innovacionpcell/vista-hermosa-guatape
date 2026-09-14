@@ -1,0 +1,129 @@
+---
+import { lotesAgrupadosPorPredio, precioM2, esInteractivo } from "../data/lotes";
+import { formatearCOP, formatearNumero, formatearValorM2 } from "../data/proyecto";
+
+/**
+ * Inventario real, lote por lote. Es la sección que convierte.
+ *
+ * ORDEN: los predios se ordenan por su lote más barato y, dentro de cada predio,
+ * los lotes de menor a mayor precio. Lo primero que ve el visitante en cada
+ * bloque es siempre la cifra más baja. Ese orden se calcula en lotes.ts
+ * (`lotesAgrupadosPorPredio`), no aquí.
+ *
+ * JERARQUÍA DE CIFRAS, y no se invierte: el PRECIO TOTAL es lo grande; el área
+ * lo acompaña y el $/m² va abajo, en letra pequeña y con su etiqueta. El valor
+ * por m² real va de $10.990 a $106.959 —casi 10× entre el lote más grande y el
+ * más pequeño—, así que destacarlo invitaría a comparar lotes que no son
+ * comparables. Aquí sirve para lo único que sirve: justificar el precio de un
+ * lote concreto frente a su tamaño.
+ *
+ * SON CARDS Y NO UNA <table> A PROPÓSITO: una tabla de 4 columnas con cifras de
+ * nueve dígitos se desborda a 360 px, que es el ancho donde se mide esta página
+ * (npm run auditar:movil). Las cards apilan sin romper nada y mantienen la
+ * relación etiqueta-valor para lectores de pantalla.
+ *
+ * AGRUPACIÓN POR PREDIO: la numeración es POR PREDIO, hay un "01" en cada uno.
+ * El nombre del predio nunca se separa del número, ni aquí, ni en el plano, ni
+ * en el mensaje de WhatsApp, ni en el payload del CRM.
+ */
+---
+
+<div class="mt-16">
+  <h3 class="font-serif text-2xl text-crema sm:text-3xl">Lotes disponibles hoy</h3>
+
+  <p class="mt-3 max-w-2xl font-sans text-sm leading-relaxed text-crema/60">
+    Cada lote tiene su propio precio y su propia área. El área es área licencia:
+    ya descuenta la vía, así que es la superficie real que se escritura.
+  </p>
+
+  {
+    lotesAgrupadosPorPredio.map((grupo) => (
+      <section class="mt-12" aria-labelledby={`predio-${grupo.predio.id}`}>
+        <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-dorado-500/25 pb-3">
+          <h4
+            id={`predio-${grupo.predio.id}`}
+            class="font-serif text-xl text-dorado-400 sm:text-2xl"
+          >
+            {grupo.predio.nombre}
+          </h4>
+          <p class="font-sans text-xs tracking-[0.14em] text-crema/50 uppercase">
+            {grupo.lotes.length} {grupo.lotes.length === 1 ? "lote" : "lotes"} · desde{" "}
+            {formatearCOP(grupo.precioDesde)}
+          </p>
+        </div>
+
+        <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {grupo.lotes.map((lote) => (
+            <li
+              class={
+                "flex h-full flex-col rounded-sm border border-dorado-500/25 bg-verde-700/40 p-6 " +
+                (esInteractivo(lote) ? "" : "opacity-55")
+              }
+            >
+              <div class="flex items-baseline justify-between gap-3">
+                <p class="font-sans text-[0.65rem] tracking-[0.18em] text-crema/50 uppercase">
+                  Lote {lote.etiqueta}
+                </p>
+                {esInteractivo(lote) ? (
+                  <p class="font-sans text-[0.65rem] tracking-[0.14em] text-crema/45">
+                    {formatearNumero(lote.area)} m&sup2;
+                  </p>
+                ) : (
+                  <p class="font-sans text-[0.65rem] tracking-[0.18em] text-crema/60 uppercase">
+                    Vendido
+                  </p>
+                )}
+              </div>
+
+              {/* Cifra principal: el precio total del lote */}
+              <p class="mt-4 font-serif text-[1.75rem] leading-none break-words text-dorado-400 sm:text-3xl">
+                {formatearCOP(lote.precio)}
+              </p>
+
+              {/* Dato secundario: el valor por m², calculado, nunca escrito */}
+              <p class="mt-3 font-sans text-xs text-crema/50">
+                {formatearNumero(lote.area)} m&sup2; · {formatearValorM2(precioM2(lote))}
+              </p>
+
+              {esInteractivo(lote) && (
+                <button
+                  type="button"
+                  class="mt-6 inline-flex w-full cursor-pointer items-center justify-center rounded-sm border border-dorado-400 px-5 py-3 font-sans text-xs font-medium tracking-[0.14em] text-dorado-400 uppercase transition-colors duration-200 hover:bg-dorado-400 hover:text-verde-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dorado-400"
+                  data-lote-cta={lote.id}
+                  aria-label={`Me interesa el lote ${grupo.predio.nombre} ${lote.etiqueta}, ${formatearCOP(lote.precio)}`}
+                >
+                  Me interesa
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</div>
+
+<script is:inline>
+  (function () {
+    var botones = document.querySelectorAll("[data-lote-cta]");
+
+    botones.forEach(function (boton) {
+      boton.addEventListener("click", function () {
+        var loteId = boton.dataset.loteCta;
+
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({ event: "lote_me_interesa", lote: loteId });
+
+        /* La calculadora y el formulario escuchan esto y precargan el lote.
+           El evento viaja con el id completo ("vista-hermosa-01"), nunca con el
+           número suelto: hay un "01" en cada predio. */
+        window.dispatchEvent(
+          new CustomEvent("vh:lote-seleccionado", { detail: { loteId: loteId } })
+        );
+
+        var destino = document.getElementById("contacto");
+        if (destino) destino.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  })();
+</script>

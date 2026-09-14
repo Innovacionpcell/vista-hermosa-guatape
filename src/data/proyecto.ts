@@ -1,15 +1,32 @@
 /**
- * Datos oficiales del proyecto. Fuente única de verdad para todo el sitio.
+ * Datos oficiales del proyecto.
  *
- * REGLA DURA: estas cifras son las que entregó el cliente y mandan sobre
- * cualquier otra fuente. No se cruzan con el levantamiento topográfico
- * (Consultoría YJC) ni se recalculan — la numeración de ese levantamiento es
- * por predio y no coincide con la del brochure comercial.
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║ DOS FUENTES DISTINTAS, Y NO SE MEZCLAN                                   ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
  *
- * La unidad comercial es el METRO CUADRADO. Nunca se presenta un precio total
- * como cifra principal: se comunica el valor por m² y el visitante estima su
- * total con la calculadora de la sección de lotes.
+ * A) EL INVENTARIO (`inventario`, abajo) se DERIVA de src/data/lotes.ts: número
+ *    de lotes, rango de áreas, rango de precios y rango de $/m². Ninguna de esas
+ *    cifras se escribe a mano aquí. Cambiar un precio en lotes.ts actualiza el
+ *    copy, el JSON-LD y el SEO sin tocar nada más.
+ *
+ * B) LAS CIFRAS DE CAMPAÑA (`precioDesdeComercial`, `precioM2DesdeComercial`)
+ *    las FIJÓ EL CLIENTE y NO se derivan del inventario. Ver el bloque de abajo.
+ *
+ * LA UNIDAD COMERCIAL ES EL LOTE, NO EL METRO CUADRADO. El precio total es
+ * siempre la cifra principal; el $/m² va como dato secundario dentro de la ficha
+ * de cada lote. Motivo en la regla 1 de src/data/lotes.ts.
  */
+
+import {
+  AREAS,
+  PRECIOS,
+  PRECIOS_M2,
+  lotes,
+  lotesDisponibles,
+  nombreLote,
+  type Lote,
+} from "./lotes";
 
 export interface Proyecto {
   nombre: string;
@@ -17,12 +34,10 @@ export interface Proyecto {
   sector: string;
   departamento: string;
   pais: string;
-  lotesDisponibles: number;
-  areaMin: number;
-  areaMax: number;
-  precioM2Min: number;
-  precioM2Max: number;
-  precioM2Promedio: number;
+  /** Cifra de campaña, fijada por el cliente. NO es el mínimo del inventario. */
+  precioDesdeComercial: number;
+  /** Cifra de campaña, fijada por el cliente. NO es el mínimo del inventario. */
+  precioM2DesdeComercial: number;
   tiempoAGuatape: string;
   coordenadas: { lat: number; lng: number };
   googleMaps: string;
@@ -46,13 +61,29 @@ export const proyecto: Proyecto = {
   departamento: "Antioquia",
   pais: "Colombia",
 
-  lotesDisponibles: 10,
-  areaMin: 3500, // m²
-  areaMax: 10000, // m²
-
-  precioM2Min: 45000, // COP — lote de menor valor
-  precioM2Max: 100000, // COP
-  precioM2Promedio: 80000, // COP — cifra de referencia comercial
+  // ─────────────────────────────────────────────────────────────────────────
+  // CIFRAS DE CAMPAÑA — decisión comercial del cliente, NO cálculo
+  //
+  // Estas dos cifras son las que el cliente quiere comunicar en publicidad y en
+  // el titular del hero. NO son el mínimo calculado del inventario y no deben
+  // "corregirse" para que cuadren con él:
+  //
+  //   · mínimo real de precio total : $250.000.000 (La Culebra 01)
+  //   · mínimo real de $/m²         : $10.990      (Vista Hermosa 01)
+  //
+  // Los dos mínimos reales los sostienen lotes atípicos —el más barato del
+  // proyecto y el más grande, que abarata muchísimo el metro—, así que anunciar
+  // esos números atraería tráfico que no encaja con el resto del inventario.
+  // Las cifras de campaña son deliberadamente más altas y más representativas.
+  //
+  // TODO (REVISAR AL MARCAR UN LOTE COMO VENDIDO): si se vende La Culebra 01 o
+  // Vista Hermosa 01, estas dos cifras DEJAN DE SER VÁLIDAS —desaparece el lote
+  // que las respalda— y hay que revisarlas con el cliente antes de seguir
+  // pautando. Anunciar un "desde" que ya no existe en el inventario es publicidad
+  // engañosa.
+  // ─────────────────────────────────────────────────────────────────────────
+  precioDesdeComercial: 280_000_000, // COP — titular del hero
+  precioM2DesdeComercial: 45_000, // COP/m² — cifra secundaria del hero
 
   tiempoAGuatape: "15 minutos", // dato del brochure oficial
 
@@ -70,6 +101,23 @@ export const proyecto: Proyecto = {
   dominio: "https://lotescampestresguatape.com",
   politicaDatos: "PENDIENTE", // TODO: el cliente debe entregar la política (Ley 1581 de 2012)
 };
+
+/**
+ * Inventario REAL, derivado de lotes.ts. Esto es lo que alimenta la barra de
+ * datos, el JSON-LD y el rango de áreas del copy y la meta description.
+ *
+ * No escribir ninguna de estas cifras a mano en ningún componente.
+ */
+export const inventario = {
+  totalLotes: lotes.length,
+  disponibles: lotesDisponibles.length,
+  areaMin: AREAS.min,
+  areaMax: AREAS.max,
+  precioMin: PRECIOS.min,
+  precioMax: PRECIOS.max,
+  precioM2Min: PRECIOS_M2.min,
+  precioM2Max: PRECIOS_M2.max,
+} as const;
 
 /**
  * Distancias y tiempos al proyecto.
@@ -107,7 +155,7 @@ export const distancias: Distancia[] = [
 
 /**
  * Formateo de moneda colombiana. Se usa en TODA la página: barra de datos,
- * calculadora, cards de bandas de área y el payload del formulario.
+ * fichas de lote, calculadora y el payload del formulario.
  */
 const formateadorCOP = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -115,11 +163,20 @@ const formateadorCOP = new Intl.NumberFormat("es-CO", {
   maximumFractionDigits: 0,
 });
 
+/**
+ * "$560.000.000", sin espacio tras el símbolo.
+ *
+ * Intl con locale es-CO mete un espacio duro entre "$" y la cifra ("$ 560.000.000").
+ * Es correcto tipográficamente, pero no es como se escribe un precio en
+ * publicidad inmobiliaria colombiana ni como lo pidió el cliente, y en el
+ * <title> el espacio se ve raro. Se quita el separador —espacio duro o normal—
+ * sin tocar los puntos de millar, que sí son los del locale.
+ */
 export function formatearCOP(valor: number): string {
-  return formateadorCOP.format(valor);
+  return formateadorCOP.format(valor).replace(/\s/g, "");
 }
 
-/** Miles con separador colombiano, sin símbolo de moneda. Para áreas: "3.500" */
+/** Miles con separador colombiano, sin símbolo de moneda. Para áreas: "50.954" */
 const formateadorNumero = new Intl.NumberFormat("es-CO", {
   maximumFractionDigits: 0,
 });
@@ -128,18 +185,24 @@ export function formatearNumero(valor: number): string {
   return formateadorNumero.format(valor);
 }
 
-/** Valor por m² tal como se comunica siempre: "$45.000/m²" */
+/**
+ * Valor por m². Siempre recibe un número CALCULADO con `precioM2()`, nunca uno
+ * escrito a mano, y se redondea al peso: "$10.990/m²".
+ */
 export function formatearValorM2(valor: number): string {
-  return `${formatearCOP(valor)}/m²`;
+  return `${formatearCOP(Math.round(valor))}/m²`;
 }
 
 /**
  * Enlace de WhatsApp con mensaje precargado y URL-encoded.
- * Si el visitante venía de un lote específico, el mensaje lo incluye.
+ * Si el visitante venía de un lote concreto, el mensaje lo nombra con su predio
+ * —"Vista Hermosa 01"—, porque el número solo es ambiguo: hay un 01 en cada
+ * predio.
  */
-export function enlaceWhatsApp(lote?: string | number): string {
+export function enlaceWhatsApp(lote?: Lote | string): string {
   const base =
     "Hola, vi la página de Lotes Campestres Vista Hermosa en Guatapé y quiero más información.";
-  const mensaje = lote ? `${base} Me interesa el lote ${lote}.` : base;
+  const nombre = typeof lote === "string" ? lote : lote ? nombreLote(lote) : "";
+  const mensaje = nombre ? `${base} Me interesa el lote ${nombre}.` : base;
   return `https://wa.me/${proyecto.whatsapp}?text=${encodeURIComponent(mensaje)}`;
 }

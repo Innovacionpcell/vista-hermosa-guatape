@@ -1,5 +1,11 @@
 ---
-import { proyecto, formatearNumero, formatearValorM2 } from "../data/proyecto";
+import {
+  proyecto,
+  inventario,
+  formatearCOP,
+  formatearNumero,
+  formatearValorM2,
+} from "../data/proyecto";
 import { hero, src, srcset } from "../data/galeria";
 import Boton from "./Boton.astro";
 import Icono from "./Icono.astro";
@@ -58,31 +64,36 @@ import Icono from "./Icono.astro";
       {proyecto.sector} · {proyecto.ciudad}
     </p>
 
+    {/* El titular lleva la cifra de CAMPAÑA, no el mínimo del inventario.
+        Ver el bloque "CIFRAS DE CAMPAÑA" en src/data/proyecto.ts. */}
     <h1
       class="mt-7 max-w-4xl font-serif text-[2rem] leading-[1.08] text-crema sm:text-5xl lg:text-7xl"
     >
-      Lotes campestres en Guatapé con vista al embalse y a la Piedra del Peñol
+      Lotes campestres en Guatapé desde {formatearCOP(proyecto.precioDesdeComercial)}
     </h1>
 
     <p class="mt-6 max-w-2xl font-sans text-base text-crema/85 sm:text-lg">
-      {proyecto.lotesDisponibles} lotes disponibles, áreas desde {
-        formatearNumero(proyecto.areaMin)
-      } m&sup2; hasta {formatearNumero(proyecto.areaMax)} m&sup2;, a {
-        proyecto.tiempoAGuatape
-      } de {proyecto.ciudad}.
+      {inventario.disponibles} lotes con vista al embalse y a la Piedra del Peñol, de {
+        formatearNumero(inventario.areaMin)
+      } a {formatearNumero(inventario.areaMax)} m&sup2;, a {proyecto.tiempoAGuatape} de {
+        proyecto.ciudad
+      }.
     </p>
 
     <!-- Cifra ancla + CTAs -->
     <div class="mt-11 flex flex-col gap-8 lg:flex-row lg:items-end lg:gap-12">
+      {/* Cifra SECUNDARIA: el $/m² de campaña. El precio total —la cifra
+          principal del proyecto— ya va en el h1, así que repetirlo aquí sería
+          ruido. Esta cifra tampoco se deriva del inventario. */}
       <div class="shrink-0">
         <p class="font-sans text-[0.7rem] tracking-[0.2em] text-dorado-400/80 uppercase">
           Desde
         </p>
         <p class="mt-1.5 font-serif text-4xl leading-none text-dorado-400 sm:text-6xl">
-          {formatearValorM2(proyecto.precioM2Min)}
+          {formatearValorM2(proyecto.precioM2DesdeComercial)}
         </p>
         <p class="mt-3 font-sans text-sm text-crema/70">
-          Solo quedan {proyecto.lotesDisponibles} lotes disponibles.
+          Solo quedan {inventario.disponibles} lotes disponibles.
         </p>
       </div>
 

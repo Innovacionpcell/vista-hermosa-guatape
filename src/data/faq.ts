@@ -1,7 +1,8 @@
-import { proyecto, formatearValorM2 } from "./proyecto";
+import { inventario, proyecto, formatearCOP, formatearNumero, formatearValorM2 } from "./proyecto";
+import { PRECIOS_M2 } from "./lotes";
 
 /**
- * FAQ — 8 preguntas orientadas a búsquedas reales. Alimenta el acordeón y el
+ * FAQ — 9 preguntas orientadas a búsquedas reales. Alimenta el acordeón y el
  * bloque JSON-LD FAQPage, así que las respuestas se publican tal cual.
  *
  * REGLA: ninguna respuesta afirma algo que el cliente no haya confirmado.
@@ -27,17 +28,28 @@ export interface PreguntaFaq {
 
 export const faq: PreguntaFaq[] = [
   {
-    pregunta: "¿Cuánto cuesta el metro cuadrado en Guatapé?",
-    respuesta: `En Lotes Campestres Vista Hermosa el valor parte de ${formatearValorM2(
-      proyecto.precioM2Min,
-    )}, con un promedio de referencia de ${formatearValorM2(
-      proyecto.precioM2Promedio,
-    )}. El valor exacto depende del lote y de su ubicación dentro del proyecto. Puedes estimar tu inversión con la calculadora de esta página y escribirnos para conocer el valor del lote que te interese.`,
+    pregunta: "¿Cuánto cuesta un lote en Guatapé?",
+    respuesta: `En Lotes Campestres Vista Hermosa cada lote tiene su propio precio, entre ${formatearCOP(
+      inventario.precioMin,
+    )} y ${formatearCOP(
+      inventario.precioMax,
+    )} según su área y su ubicación. En esta página está el listado completo con el precio de cada lote y un simulador de cuota inicial. Escríbenos y te confirmamos la disponibilidad del que te interese.`,
   },
   {
-    pregunta: "¿Cuál es el área mínima de los lotes?",
-    respuesta:
-      "Las áreas van desde 3.500 m² hasta 10.000 m². La unidad de venta es el metro cuadrado, así que defines el área que necesitas dentro de ese rango y el valor total se calcula sobre ella.",
+    pregunta: "¿Cuánto mide cada lote?",
+    respuesta: `Las áreas van desde ${formatearNumero(
+      inventario.areaMin,
+    )} m² hasta ${formatearNumero(
+      inventario.areaMax,
+    )} m². Es área licencia: ya descuenta la vía, así que es la superficie real que se escritura. Cada lote se vende completo, con su precio propio; no se fracciona.`,
+  },
+  {
+    pregunta: "¿Cuánto vale el metro cuadrado?",
+    respuesta: `Depende mucho del lote: va de ${formatearValorM2(
+      PRECIOS_M2.min,
+    )} a ${formatearValorM2(
+      PRECIOS_M2.max,
+    )}, porque los lotes más grandes abaratan el metro. Por eso la cifra que conviene comparar es el precio total del lote, que es el que aparece en el listado de esta página junto al valor por m² de cada uno.`,
   },
   {
     pregunta: "¿Se puede construir en los lotes?",

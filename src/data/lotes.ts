@@ -1,47 +1,82 @@
 /**
- * Lotes y bandas de área — sección 7 de la landing.
+ * LOTES REALES — fuente única de verdad del inventario.
  *
  * ╔══════════════════════════════════════════════════════════════════════════╗
- * ║ DOS DECISIONES EXPLÍCITAS QUE NO SE DEBEN REVERTIR SIN CONFIRMAR         ║
+ * ║ REGLAS QUE NO SE DEBEN REVERTIR SIN CONFIRMAR CON EL CLIENTE             ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  *
- * 1. NINGÚN LOTE SE MARCA COMO VENDIDO.
- *    El plano del brochure rotula 11 lotes y muestra dos etiquetas "SOLD", pero
- *    las líneas guía no permiten atribuir esos dos SOLD a un número concreto con
- *    certeza. Marcar como vendido un lote que sí está disponible cuesta un
- *    cliente, así que todos los hotspots quedan ACTIVOS y el tooltip no afirma
- *    disponibilidad ninguna: solo identifica el lote e invita a consultar.
- *    TODO: pedir al cliente qué dos lotes están vendidos y pasarlos a "vendido".
+ * 1. EL PRECIO TOTAL ES LA CIFRA PRINCIPAL EN TODA LA PÁGINA.
+ *    El valor por m² real de este inventario va de $10.990 (Vista Hermosa 01,
+ *    50.954 m²) a $106.959 (Vista Hermosa 03, 3.880 m²): casi 10× de diferencia.
+ *    Una cifra con ese rango no comunica nada por sí sola y, peor, invita a
+ *    comparar lotes que no son comparables. Por eso el precio total manda y el
+ *    $/m² va siempre como dato SECUNDARIO, dentro de la ficha de cada lote.
  *
- * 2. 11 LOTES EN EL PLANO vs. 10 DISPONIBLES EN LOS DATOS OFICIALES.
- *    proyecto.lotesDisponibles = 10 es la cifra del cliente y manda en todo el
- *    copy y en el JSON-LD. El plano dibuja 11 porcelas porque incluye las
- *    vendidas. Los dos números conviven sin contradecirse mientras el plano no
- *    anuncie un total.
- *    TODO: confirmar con el cliente que 11 totales − 2 vendidos se comunica
- *    como "10 disponibles", o corregir la cifra.
+ * 2. `precioM2` SE CALCULA, NUNCA SE ESCRIBE A MANO.
+ *    Solo hay dos números por lote: `area` y `precio`. Cualquier valor por m²
+ *    que aparezca en el sitio sale de `precioM2()`. Si algún día se hardcodea
+ *    uno, se desincroniza en cuanto cambie un precio.
  *
- * 3. NO SE PUBLICA ÁREA NI PRECIO POR LOTE.
- *    Ese desglose no está confirmado. El tooltip del plano muestra únicamente el
- *    número de lote. El precio se comunica siempre como valor por m².
+ * 3. LAS ÁREAS SON "ÁREA LICENCIA": YA DESCUENTAN LA VÍA.
+ *    Son las áreas netas vendibles entregadas por el cliente. No se recalculan
+ *    contra el levantamiento topográfico ni contra el render del plano.
+ *
+ * 4. TODOS LOS LOTES ESTÁN COMO "disponible".
+ *    TODO: el cliente aún no ha confirmado cuáles DOS lotes están vendidos. El
+ *    plano del brochure muestra dos etiquetas "SOLD" que no se pueden atribuir a
+ *    un lote concreto con certeza. Marcar como vendido un lote disponible cuesta
+ *    un cliente, así que hasta que lo confirme, los 11 quedan en "disponible".
+ *    Al cambiar dos a "vendido": revisar `precioDesdeComercial` y
+ *    `precioM2DesdeComercial` en proyecto.ts (ver el TODO de ese archivo).
  */
 
-export type EstadoLote = "disponible" | "vendido" | "por-confirmar";
+export type EstadoLote = "disponible" | "vendido";
+
+export type PredioId = "vista-hermosa" | "la-piedrita" | "la-culebra";
+
+export interface Predio {
+  id: PredioId;
+  /** Como se muestra al usuario */
+  nombre: string;
+}
+
+/**
+ * Los tres predios del proyecto. La numeración de lotes es POR PREDIO: hay un
+ * "01" en Vista Hermosa, otro en La Piedrita y otro en La Culebra. NO existe una
+ * secuencia 01–11; escribirla rompe la correspondencia con el plano y con la
+ * forma en que el cliente y los asesores nombran cada lote.
+ */
+export const predios: Predio[] = [
+  { id: "vista-hermosa", nombre: "Vista Hermosa" },
+  { id: "la-piedrita", nombre: "La Piedrita" },
+  { id: "la-culebra", nombre: "La Culebra" },
+];
 
 export interface Lote {
-  /** Número tal como aparece rotulado en el plano del brochure */
+  /** Identificador estable: "vista-hermosa-01". Es lo que viaja al CRM. */
+  id: string;
+  predio: PredioId;
+  /** Número dentro de SU predio, 1–5 */
   numero: number;
   /** "01", "02"… — como se muestra al usuario */
   etiqueta: string;
+  /** m² de área licencia (neta, ya descontada la vía) */
+  area: number;
+  /** COP, precio total del lote */
+  precio: number;
   estado: EstadoLote;
   /**
-   * Polígono del hotspot, en el sistema de coordenadas de PLANO_VIEWBOX.
+   * Polígono del hotspot en el sistema de coordenadas de PLANO_VIEWBOX.
    * Formato de `points` de <polygon>: "x1,y1 x2,y2 x3,y3 …"
    *
-   * TODO: estos polígonos son una PRIMERA APROXIMACIÓN trazada a ojo sobre el
-   * render. Sirven para que la interacción funcione, pero hay que ajustarlos
-   * visualmente contra el plano antes de publicar. Se ajustan aquí, no en el
-   * componente.
+   * TODO (VERIFICAR ANTES DE PAUTAR): la asignación polígono → lote es
+   * PROVISIONAL. Los polígonos se trazaron a ojo sobre el render y se han
+   * emparejado con los lotes reales por tamaño relativo (el polígono más grande
+   * al lote más grande, y así sucesivamente), que es la única correspondencia
+   * defendible sin el plano rotulado. El tooltip muestra área y precio, así que
+   * un emparejamiento equivocado enseña un precio equivocado sobre una parcela.
+   * Hay que verificarlos contra el plano rotulado del cliente. Se ajustan aquí,
+   * no en el componente.
    */
   hotspot: string;
 }
@@ -50,180 +85,235 @@ export interface Lote {
  * Sistema de coordenadas del plano interactivo.
  * El archivo de 1920 px mide 1920×1588; aquí se trabaja en el espacio de 1200 px
  * (1200×993), que es la escala sobre la que se trazaron los polígonos. El <svg>
- * se superpone con este viewBox y escala solo con la imagen, sea cual sea el
- * tamaño servido.
+ * se superpone con este viewBox y escala solo con la imagen.
  */
 export const PLANO_VIEWBOX = { ancho: 1200, alto: 993 } as const;
 
 export const PLANO = {
   base: "renders/plano-lotes-vista-hermosa-guatape",
-  alt: "Plano aéreo con la distribución de los 11 lotes campestres del proyecto Vista Hermosa en Guatapé",
-  /**
-   * Caption sin número, por decisión explícita: "11 lotes — 2 vendidos" en la
-   * misma pantalla que "10 lotes disponibles" se lee como una contradicción.
-   */
-  caption: "Distribución de los lotes del proyecto",
+  alt: "Plano aéreo con la distribución de los 11 lotes campestres del proyecto en Guatapé, repartidos entre los predios Vista Hermosa, La Piedrita y La Culebra",
+  caption: "Distribución de los lotes en los tres predios",
   ancho: 1200,
   alto: 993,
 } as const;
 
+/**
+ * INVENTARIO REAL. Orden de lectura: por predio y número, que es como lo nombra
+ * el cliente. Las vistas ordenadas por precio se derivan más abajo.
+ */
 export const lotes: Lote[] = [
+  // ── Vista Hermosa ─────────────────────────────────────────────────────────
   {
+    id: "vista-hermosa-01",
+    predio: "vista-hermosa",
     numero: 1,
     etiqueta: "01",
-    estado: "por-confirmar",
-    hotspot: "128,232 352,222 392,286 370,330 170,345 122,300",
-  },
-  {
-    numero: 2,
-    etiqueta: "02",
-    estado: "por-confirmar",
-    hotspot: "420,258 600,248 614,300 560,344 432,346",
-  },
-  {
-    numero: 3,
-    etiqueta: "03",
-    estado: "por-confirmar",
+    area: 50954,
+    precio: 560_000_000,
+    estado: "disponible",
     hotspot: "40,360 210,300 300,420 540,520 545,640 300,700 90,690 30,540",
   },
   {
-    numero: 4,
-    etiqueta: "04",
-    estado: "por-confirmar",
-    hotspot: "640,392 780,372 800,470 730,560 640,545",
-  },
-  {
-    numero: 5,
-    etiqueta: "05",
-    estado: "por-confirmar",
+    id: "vista-hermosa-02",
+    predio: "vista-hermosa",
+    numero: 2,
+    etiqueta: "02",
+    area: 7000,
+    precio: 490_000_000,
+    estado: "disponible",
     hotspot: "620,186 760,170 782,262 700,300 616,270",
   },
   {
-    numero: 6,
-    etiqueta: "06",
-    estado: "por-confirmar",
+    id: "vista-hermosa-03",
+    predio: "vista-hermosa",
+    numero: 3,
+    etiqueta: "03",
+    area: 3880,
+    precio: 415_000_000,
+    estado: "disponible",
+    hotspot: "1070,554 1180,550 1190,616 1112,634 1066,604",
+  },
+  {
+    id: "vista-hermosa-04",
+    predio: "vista-hermosa",
+    numero: 4,
+    etiqueta: "04",
+    area: 5552,
+    precio: 470_000_000,
+    estado: "disponible",
     hotspot: "692,300 830,292 848,382 760,404 686,372",
   },
   {
-    numero: 7,
-    etiqueta: "07",
-    estado: "por-confirmar",
-    hotspot: "760,372 900,366 918,448 830,466 754,432",
+    id: "vista-hermosa-05",
+    predio: "vista-hermosa",
+    numero: 5,
+    etiqueta: "05",
+    area: 3350,
+    precio: 335_000_000,
+    estado: "disponible",
+    hotspot: "1020,528 1120,524 1132,592 1058,610 1016,580",
+  },
+
+  // ── La Piedrita ───────────────────────────────────────────────────────────
+  {
+    id: "la-piedrita-01",
+    predio: "la-piedrita",
+    numero: 1,
+    etiqueta: "01",
+    area: 10000,
+    precio: 540_000_000,
+    estado: "disponible",
+    hotspot: "640,392 780,372 800,470 730,560 640,545",
   },
   {
-    numero: 8,
-    etiqueta: "08",
-    estado: "por-confirmar",
-    hotspot: "862,428 990,424 1004,494 920,512 856,486",
+    id: "la-piedrita-02",
+    predio: "la-piedrita",
+    numero: 2,
+    etiqueta: "02",
+    area: 6700,
+    precio: 410_000_000,
+    estado: "disponible",
+    hotspot: "420,258 600,248 614,300 560,344 432,346",
   },
   {
-    numero: 9,
-    etiqueta: "09",
-    estado: "por-confirmar",
+    id: "la-piedrita-03",
+    predio: "la-piedrita",
+    numero: 3,
+    etiqueta: "03",
+    area: 3822,
+    precio: 340_000_000,
+    estado: "disponible",
     hotspot: "962,500 1060,496 1072,566 996,584 956,552",
   },
   {
-    numero: 10,
-    etiqueta: "10",
-    estado: "por-confirmar",
-    hotspot: "1020,528 1120,524 1132,592 1058,610 1016,580",
+    id: "la-piedrita-04",
+    predio: "la-piedrita",
+    numero: 4,
+    etiqueta: "04",
+    area: 4400,
+    precio: 345_000_000,
+    estado: "disponible",
+    hotspot: "760,372 900,366 918,448 830,466 754,432",
   },
   {
-    numero: 11,
-    etiqueta: "11",
-    estado: "por-confirmar",
-    hotspot: "1070,554 1180,550 1190,616 1112,634 1066,604",
+    id: "la-piedrita-05",
+    predio: "la-piedrita",
+    numero: 5,
+    etiqueta: "05",
+    area: 4400,
+    precio: 345_000_000,
+    estado: "disponible",
+    hotspot: "862,428 990,424 1004,494 920,512 856,486",
+  },
+
+  // ── La Culebra ────────────────────────────────────────────────────────────
+  {
+    id: "la-culebra-01",
+    predio: "la-culebra",
+    numero: 1,
+    etiqueta: "01",
+    area: 12796,
+    precio: 250_000_000,
+    estado: "disponible",
+    hotspot: "128,232 352,222 392,286 370,330 170,345 122,300",
   },
 ];
 
-/** ¿El hotspot es interactivo? Hoy todos lo son, por la decisión 1 de arriba. */
-export function esInteractivo(lote: Lote): boolean {
-  return lote.estado !== "vendido";
+// ───────────────────────────────────────────────────────────────────────────
+// Derivados. Nada de esto se escribe a mano.
+// ───────────────────────────────────────────────────────────────────────────
+
+/** Valor por m² del lote. SIEMPRE calculado — ver la regla 2 de arriba. */
+export function precioM2(lote: Lote): number {
+  return lote.precio / lote.area;
 }
+
+export function nombrePredio(id: PredioId): string {
+  return predios.find((p) => p.id === id)?.nombre ?? id;
+}
+
+/** "Vista Hermosa 01" — la forma en que se nombra un lote en todo el sitio. */
+export function nombreLote(lote: Lote): string {
+  return `${nombrePredio(lote.predio)} ${lote.etiqueta}`;
+}
+
+export function loteDeId(id: string): Lote | undefined {
+  return lotes.find((l) => l.id === id);
+}
+
+export function esInteractivo(lote: Lote): boolean {
+  return lote.estado === "disponible";
+}
+
+export const lotesDisponibles: Lote[] = lotes.filter((l) => l.estado === "disponible");
+
+/** Todos los lotes de menor a mayor precio total. */
+export const lotesPorPrecio: Lote[] = [...lotes].sort((a, b) => a.precio - b.precio);
 
 /**
- * Texto del tooltip. Deliberadamente NO afirma disponibilidad ni muestra área o
- * precio: ninguno de los tres datos está confirmado lote por lote.
+ * Lotes agrupados por predio para la sección comercial: los predios se ordenan
+ * por su lote más barato y, dentro de cada uno, los lotes de menor a mayor
+ * precio. Así la primera cifra que ve el visitante es siempre la más baja.
  */
-export function tooltipLote(lote: Lote): string {
-  return lote.estado === "vendido" ? `Lote ${lote.etiqueta} · Vendido` : `Lote ${lote.etiqueta}`;
+export interface GrupoPredio {
+  predio: Predio;
+  lotes: Lote[];
+  /** Precio del lote más barato del predio. Ordena los grupos. */
+  precioDesde: number;
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// 7b. Bandas de área
-// ───────────────────────────────────────────────────────────────────────────
+export const lotesAgrupadosPorPredio: GrupoPredio[] = predios
+  .map((predio) => {
+    const suyos = lotesPorPrecio.filter((l) => l.predio === predio.id);
+    return {
+      predio,
+      lotes: suyos,
+      precioDesde: suyos.length > 0 ? suyos[0]!.precio : Infinity,
+    };
+  })
+  .filter((g) => g.lotes.length > 0)
+  .sort((a, b) => a.precioDesde - b.precioDesde);
 
-export interface BandaArea {
-  id: string;
-  min: number;
-  max: number;
-  /** "3.500 – 5.000 m²" */
-  etiqueta: string;
-  /** Frase de uso. Habla del lote y del entorno, nunca de rentabilidad. */
-  uso: string;
-  /** Área con la que se precarga la calculadora al pulsar la card */
-  areaSugerida: number;
+/** Extremos reales del inventario disponible. Alimentan copy, SEO y JSON-LD. */
+function extremos(valores: number[]): { min: number; max: number } {
+  return { min: Math.min(...valores), max: Math.max(...valores) };
 }
 
-export const bandasArea: BandaArea[] = [
-  {
-    id: "3500-5000",
-    min: 3500,
-    max: 5000,
-    etiqueta: "3.500 – 5.000 m²",
-    uso: "Ideal para casa campestre",
-    areaSugerida: 4000,
-  },
-  {
-    id: "5000-7500",
-    min: 5000,
-    max: 7500,
-    etiqueta: "5.000 – 7.500 m²",
-    uso: "Para casa y huerta",
-    areaSugerida: 6000,
-  },
-  {
-    id: "7500-10000",
-    min: 7500,
-    max: 10000,
-    etiqueta: "7.500 – 10.000 m²",
-    uso: "Para finca de recreo con amplio retiro",
-    areaSugerida: 8500,
-  },
-];
+// Si algún día se venden todos, el sitio sigue mostrando el rango del proyecto
+// en vez de -Infinity: los extremos caen al inventario completo.
+const baseDeCalculo = lotesDisponibles.length > 0 ? lotesDisponibles : lotes;
 
-/** Opciones del <select> "área de interés" del formulario. */
-export const opcionesAreaInteres: { valor: string; etiqueta: string }[] = [
-  ...bandasArea.map((b) => ({ valor: b.id, etiqueta: b.etiqueta })),
-  { valor: "sin-definir", etiqueta: "Sin definir" },
-];
+export const AREAS = extremos(baseDeCalculo.map((l) => l.area));
+export const PRECIOS = extremos(baseDeCalculo.map((l) => l.precio));
+export const PRECIOS_M2 = extremos(baseDeCalculo.map(precioM2));
 
 // ───────────────────────────────────────────────────────────────────────────
-// 7c. Calculadora
+// Calculadora — simulador de cuota inicial
 // ───────────────────────────────────────────────────────────────────────────
 
-/** Opciones del selector de valor por m². El promedio va preseleccionado. */
-export interface OpcionValorM2 {
-  valor: number;
-  etiqueta: string;
-  porDefecto: boolean;
-}
+/**
+ * Porcentajes de cuota inicial que ofrece el simulador.
+ *
+ * TODO: son los tramos habituales del sector, NO un plan de pago confirmado por
+ * el cliente. La nota de abajo lo dice explícitamente para no prometer una
+ * financiación que quizá no exista. Confirmar las condiciones reales con
+ * R&U Ingenieros y, si difieren, cambiarlas aquí.
+ */
+export const PORCENTAJES_CUOTA_INICIAL = [10, 20, 30] as const;
 
-export const opcionesValorM2: OpcionValorM2[] = [
-  { valor: 45000, etiqueta: "$45.000 (desde)", porDefecto: false },
-  { valor: 80000, etiqueta: "$80.000 (promedio)", porDefecto: true },
-  { valor: 100000, etiqueta: "$100.000 (máximo)", porDefecto: false },
-];
+export const CUOTA_INICIAL_POR_DEFECTO = 20;
 
 export const CALCULADORA = {
-  areaMin: 3500,
-  areaMax: 10000,
-  areaPaso: 100,
-  areaPorDefecto: 5000,
-  /** El valor propio que escriba el usuario se acota a este rango. */
-  valorM2Min: 45000,
-  valorM2Max: 100000,
   /** Va bajo el resultado. Es la advertencia que sostiene la cifra. */
   nota:
-    "Valor estimado. El valor por m² varía según el lote y su ubicación dentro del proyecto.",
+    "Simulación informativa. El porcentaje de cuota inicial y las condiciones de pago se acuerdan directamente con la firma que desarrolla el proyecto.",
 } as const;
+
+/** Cuota inicial y saldo de un lote a un porcentaje dado. */
+export function simularPago(
+  lote: Lote,
+  porcentaje: number,
+): { cuotaInicial: number; saldo: number } {
+  const cuotaInicial = Math.round((lote.precio * porcentaje) / 100);
+  return { cuotaInicial, saldo: lote.precio - cuotaInicial };
+}

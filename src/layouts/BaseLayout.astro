@@ -1,5 +1,6 @@
 ---
-import { proyecto } from "../data/proyecto";
+import { proyecto, inventario } from "../data/proyecto";
+import { lotesDisponibles, nombreLote } from "../data/lotes";
 import "../styles/global.css";
 
 export interface Props {
@@ -34,9 +35,35 @@ const ogImageAbs = new URL(ogImage, site).href;
 const { lat, lng } = proyecto.coordenadas;
 
 // ── JSON-LD ─────────────────────────────────────────────────────────────────
-// El precio declarado es SIEMPRE el del metro cuadrado, nunca un total por lote.
-// `unitText`/`unitCode: MTK` (metro cuadrado, UN/CEFACT) lo deja explícito para
-// los rastreadores: 45.000–100.000 COP por m², no por lote.
+// EL PRECIO DECLARADO ES EL TOTAL DEL LOTE, no el del metro cuadrado.
+//
+// Antes esto declaraba un precio por m² con `unitCode: MTK`. Ya no aplica: la
+// unidad de venta es el lote completo y hay un precio real para cada uno, así
+// que el AggregateOffer declara el rango de precios totales
+// (250.000.000 – 560.000.000 COP) y debajo va un Offer por lote con su precio y
+// su superficie. Declarar un precio por m² mientras la página muestra totales
+// haría que el resultado enriquecido contradijera a la propia página.
+//
+// Ojo: aquí van las cifras REALES del inventario, nunca el "desde" de campaña.
+// El JSON-LD lo leen los rastreadores, no el visitante, y tiene que describir lo
+// que de verdad se vende.
+const ofertasPorLote = lotesDisponibles.map((lote) => ({
+  "@type": "Offer",
+  name: nombreLote(lote),
+  price: lote.precio,
+  priceCurrency: "COP",
+  availability: "https://schema.org/InStock",
+  // La superficie va como eligibleQuantity del Offer —"este precio cubre estos
+  // m²"— y no como floorSize de un itemOffered: floorSize pide un Place o una
+  // Accommodation, y un lote sin construir no es ninguna de las dos.
+  eligibleQuantity: {
+    "@type": "QuantitativeValue",
+    value: lote.area,
+    unitCode: "MTK",
+    unitText: "m2",
+  },
+}));
+
 const listingSchema = {
   "@context": "https://schema.org",
   "@type": "RealEstateListing",
@@ -48,7 +75,7 @@ const listingSchema = {
     new URL("/img/renders/render-aereo-proyecto-lotes-campestres-guatape-1920.webp", site).href,
     new URL("/img/fotos/panoramica-aerea-lotes-guatape-piedra-del-penol-1920.webp", site).href,
   ],
-  numberOfItems: proyecto.lotesDisponibles,
+  numberOfItems: inventario.disponibles,
   geo: {
     "@type": "GeoCoordinates",
     latitude: lat,
@@ -63,18 +90,10 @@ const listingSchema = {
   offers: {
     "@type": "AggregateOffer",
     priceCurrency: "COP",
-    lowPrice: proyecto.precioM2Min,
-    highPrice: proyecto.precioM2Max,
-    offerCount: proyecto.lotesDisponibles,
-    unitText: "m2",
-    priceSpecification: {
-      "@type": "UnitPriceSpecification",
-      priceCurrency: "COP",
-      minPrice: proyecto.precioM2Min,
-      maxPrice: proyecto.precioM2Max,
-      unitCode: "MTK",
-      unitText: "m2",
-    },
+    lowPrice: inventario.precioMin,
+    highPrice: inventario.precioMax,
+    offerCount: inventario.disponibles,
+    offers: ofertasPorLote,
   },
 };
 

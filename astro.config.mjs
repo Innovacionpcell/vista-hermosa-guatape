@@ -21,12 +21,10 @@ export default defineConfig({
   // index.html → 403 Forbidden en toda la web, y de paso dist/server/ queda
   // descargable por HTTP. Eso tumbó producción.
   //
-  // Para activar el backend Node hacen falta LAS DOS COSAS, en este orden:
-  //   1. En hPanel, rellenar "Entry file" = dist/server/entry.mjs
-  //      (y comprobar que el proceso arranca y responde).
-  //   2. Solo entonces: volver a poner el adapter aquí y mover
-  //      src/server/lead-endpoint.ts a src/pages/api/lead.ts
-  // Ver README → "Backend del formulario".
+  // Y YA NO HACE FALTA: el formulario entrega el lead con un POST desde el
+  // navegador a un webhook de n8n, que es quien reenvía al CRM y quien guarda
+  // las credenciales. El sitio no necesita servidor propio para nada.
+  // Ver README → "Entrega de leads".
   output: 'static',
 
   // 'directory' genera /gracias/index.html, que es lo que Apache/LiteSpeed sirve sin config extra.

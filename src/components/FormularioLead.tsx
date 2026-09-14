@@ -1,20 +1,46 @@
 import { useEffect, useRef, useState } from "react";
-import { opcionesAreaInteres } from "../data/lotes";
-import { formatearCOP, proyecto } from "../data/proyecto";
+import {
+  lotesAgrupadosPorPredio,
+  loteDeId,
+  nombreLote,
+  nombrePredio,
+  precioM2,
+} from "../data/lotes";
+import { formatearCOP, formatearNumero, formatearValorM2, proyecto } from "../data/proyecto";
 
 /**
- * ¿Hay endpoint de servidor disponible?
+ * ENTREGA DEL LEAD — webhook de n8n, no endpoint propio.
  *
- * Hoy NO: el sitio es 100 % estático porque el adaptador de Node partía la
- * salida en dist/client + dist/server y tumbaba producción con un 403.
- * Mientras tanto el formulario entrega el lead por WhatsApp, que en un sitio
- * estático funciona y no pierde a nadie.
+ * El sitio es 100 % ESTÁTICO y sigue siéndolo: el adaptador de Node partía la
+ * salida en dist/client + dist/server y tumbaba producción con un 403 (ver la
+ * nota larga en astro.config.mjs). No se vuelve a `output: 'server'`.
  *
- * Para activarlo, además de reactivar el endpoint (ver src/server/
- * lead-endpoint.ts), basta definir PUBLIC_BACKEND_LEADS=1 en el panel: este
- * componente pasa a hacer POST a /api/lead sin tocar una línea de código.
+ * Así que el navegador hace POST directamente a un webhook de n8n, y n8n
+ * reenvía al CRM. La URL lleva prefijo PUBLIC_ y por tanto VIAJA EN EL BUNDLE:
+ * es pública por diseño. Consecuencias asumidas, porque el flujo no las
+ * convierte en un problema:
+ *   · Cualquiera puede mandar un POST a ese webhook. Es un buzón de leads, no
+ *     una API con datos: lo peor que se consigue es basura en el CRM, y para eso
+ *     están el honeypot, el tiempo mínimo y el filtrado en n8n.
+ *   · Por lo mismo, NUNCA se pone un secreto ni una API key del CRM aquí. n8n es
+ *     el que guarda las credenciales; el navegador solo conoce la URL del buzón.
+ *
+ * NUNCA PERDER UN LEAD: si el webhook no está configurado, falla, o el navegador
+ * bloquea la petición por CORS, el formulario NO muestra un error y se rinde:
+ * cae a WhatsApp con todos los datos ya escritos en el mensaje. Un lead que
+ * llega por otro canal se atiende; uno que se perdió, no.
  */
-const HAY_BACKEND = import.meta.env.PUBLIC_BACKEND_LEADS === "1";
+const WEBHOOK = (import.meta.env.PUBLIC_N8N_WEBHOOK_URL ?? "").trim();
+
+/* TODO: pegar aquí la URL de producción del webhook de n8n, definiendo
+   PUBLIC_N8N_WEBHOOK_URL en hPanel (o en .env para probar en local). Mientras
+   esté vacía o empiece por PENDIENTE, el formulario entrega por WhatsApp y no
+   se pierde ningún lead. Al definirla, comprobar DOS cosas:
+     1. Que el webhook de n8n acepta el origen https://lotescampestresguatape.com
+        (Settings → CORS / allowedOrigins). Sin eso el navegador corta el POST y
+        todo se va por el fallback sin que nadie se entere.
+     2. Que el flujo de n8n responde 2xx rápido; el POST tiene 8 s de margen. */
+const hayWebhook = WEBHOOK !== "" && !WEBHOOK.startsWith("PENDIENTE");
 
 declare global {
   interface Window {
@@ -26,18 +52,20 @@ declare global {
  * Formulario de lead. Isla React con client:visible.
  *
  * Aquí React sí se gana su sitio: seis campos con validación por campo, estado
- * de envío, errores accesibles y tres orígenes distintos de precarga (plano,
- * bandas de área y calculadora). Hacerlo a mano sería más código y más frágil.
+ * de envío, errores accesibles y dos orígenes de precarga (el plano y las cards
+ * de lote por un lado, el simulador de pago por otro).
  *
- * La validación de cliente es cortesía para el visitante, NO seguridad: la que
- * cuenta está en /api/lead, porque cualquiera puede saltarse esta.
+ * El campo de lote es un SELECTOR DE LOTE REAL agrupado por predio. Antes era un
+ * tramo de área genérico, que con precios reales ya no dice nada: lo que
+ * califica un lead es qué lote concreto quiere, no qué tamaño le gustaría.
  */
 
 interface Campos {
   nombre: string;
   whatsapp: string;
   email: string;
-  area_interes: string;
+  /** id del lote ("vista-hermosa-01") o "" si aún no lo sabe */
+  lote: string;
   mensaje: string;
   consentimiento: boolean;
 }
@@ -48,12 +76,11 @@ const VACIO: Campos = {
   nombre: "",
   whatsapp: "",
   email: "",
-  area_interes: "sin-definir",
+  lote: "",
   mensaje: "",
   consentimiento: false,
 };
 
-/** Espejo de la validación del servidor, para avisar antes de enviar. */
 function validarCampo(nombre: keyof Campos, valor: string | boolean): string | undefined {
   if (nombre === "nombre") {
     if (String(valor).trim().length < 2) return "Escribe tu nombre completo.";
@@ -76,6 +103,13 @@ function validarCampo(nombre: keyof Campos, valor: string | boolean): string | u
   return undefined;
 }
 
+/** Normaliza el celular a 57XXXXXXXXXX antes de mandarlo al CRM. */
+function normalizarWhatsApp(valor: string): string {
+  const digitos = valor.replace(/\D/g, "");
+  const nacional = digitos.startsWith("57") && digitos.length === 12 ? digitos.slice(2) : digitos;
+  return nacional.length === 10 ? "57" + nacional : digitos;
+}
+
 function leerAtribucion(): Record<string, string> {
   try {
     return JSON.parse(sessionStorage.getItem("vh:atribucion") || "{}");
@@ -95,44 +129,39 @@ export default function FormularioLead({ politicaUrl }: Props) {
   const [tocados, setTocados] = useState<Partial<Record<keyof Campos, boolean>>>({});
   const [enviando, setEnviando] = useState(false);
 
-  /* Precarga desde el plano y la calculadora */
-  const [loteInteres, setLoteInteres] = useState("");
-  const [valorM2, setValorM2] = useState<number | null>(null);
-  const [inversion, setInversion] = useState<number | null>(null);
+  /** Cuota inicial que el visitante simuló en la calculadora, si pasó por ella */
+  const [cuotaInicial, setCuotaInicial] = useState<number | null>(null);
+  const [porcentajeCuota, setPorcentajeCuota] = useState<number | null>(null);
 
-  /** Momento en que se pintó el formulario: el servidor rechaza < 3 s. */
+  /** Momento en que se pintó el formulario: por debajo de 3 s es un bot. */
   const ts = useRef(Date.now());
   const seccion = useRef<HTMLDivElement>(null);
-  /** Honeypot: se lee su valor REAL al enviar. Mandar "" fijo lo dejaría
-   *  decorativo, porque el bot rellena el DOM y nosotros ignoraríamos el dato. */
+  /** Honeypot: se lee su valor REAL al enviar. */
   const honeypot = useRef<HTMLInputElement>(null);
 
-  /* Escucha lo que emiten el plano, las bandas y la calculadora. Gracias a
-     esto el lead llega al CRM con área y presupuesto que definió el visitante. */
+  const lote = campos.lote ? loteDeId(campos.lote) : undefined;
+
+  /* Escucha lo que emiten el plano, las cards de lote y el simulador. Gracias a
+     esto el lead llega al CRM con el lote y la cuota que definió el visitante. */
   useEffect(() => {
     function alLote(e: Event) {
-      const d = (e as CustomEvent<{ lote: string }>).detail;
-      if (d?.lote) setLoteInteres(d.lote);
-    }
-    function alArea(e: Event) {
-      const d = (e as CustomEvent<{ banda: string }>).detail;
-      if (d?.banda) setCampos((c) => ({ ...c, area_interes: d.banda }));
+      const d = (e as CustomEvent<{ loteId: string }>).detail;
+      if (d?.loteId && loteDeId(d.loteId)) {
+        setCampos((c) => ({ ...c, lote: d.loteId }));
+      }
     }
     function alCotizar(e: Event) {
-      const d = (e as CustomEvent<{ area: number; valorM2: number; total: number; lote: string | null }>)
+      const d = (e as CustomEvent<{ loteId: string; porcentaje: number; cuotaInicial: number }>)
         .detail;
       if (!d) return;
-      setValorM2(d.valorM2);
-      setInversion(d.total);
-      if (d.lote) setLoteInteres(d.lote);
-      setCampos((c) => ({ ...c, area_interes: bandaDeArea(d.area) }));
+      if (d.loteId && loteDeId(d.loteId)) setCampos((c) => ({ ...c, lote: d.loteId }));
+      if (typeof d.cuotaInicial === "number") setCuotaInicial(d.cuotaInicial);
+      if (typeof d.porcentaje === "number") setPorcentajeCuota(d.porcentaje);
     }
     window.addEventListener("vh:lote-seleccionado", alLote);
-    window.addEventListener("vh:area-preseleccionada", alArea);
     window.addEventListener("vh:cotizacion", alCotizar);
     return () => {
       window.removeEventListener("vh:lote-seleccionado", alLote);
-      window.removeEventListener("vh:area-preseleccionada", alArea);
       window.removeEventListener("vh:cotizacion", alCotizar);
     };
   }, []);
@@ -162,11 +191,46 @@ export default function FormularioLead({ politicaUrl }: Props) {
     if (errores[clave] && !validarCampo(clave, valor)) {
       setErrores((e) => ({ ...e, [clave]: undefined }));
     }
+    // Si cambia de lote a mano, la cuota simulada para el lote anterior deja de
+    // tener sentido: mandarla al CRM junto al lote nuevo sería un dato falso.
+    if (clave === "lote") {
+      setCuotaInicial(null);
+      setPorcentajeCuota(null);
+    }
   }
 
   function alSalir(clave: keyof Campos) {
     setTocados((t) => ({ ...t, [clave]: true }));
     setErrores((e) => ({ ...e, [clave]: validarCampo(clave, campos[clave]) }));
+  }
+
+  /**
+   * Payload que viaja a n8n y de ahí al CRM. Los nombres de campo son el
+   * contrato con el flujo de n8n: cambiar uno aquí obliga a cambiarlo allí.
+   */
+  function payload(): Record<string, unknown> {
+    return {
+      origen: "landing-vista-hermosa",
+      fecha_iso: new Date().toISOString(),
+
+      nombre: campos.nombre.trim(),
+      whatsapp: normalizarWhatsApp(campos.whatsapp),
+      email: campos.email.trim().toLowerCase(),
+
+      // Lote: siempre predio + número. El número solo es ambiguo, hay un "01"
+      // en cada predio. `lote_id` es el identificador estable para el CRM.
+      predio: lote ? nombrePredio(lote.predio) : "",
+      lote: lote ? lote.etiqueta : "",
+      lote_id: lote ? lote.id : "",
+      precio_lote: lote ? lote.precio : null,
+      area: lote ? lote.area : null,
+      cuota_inicial_simulada: cuotaInicial,
+
+      mensaje: campos.mensaje.trim(),
+      consentimiento: campos.consentimiento,
+
+      ...leerAtribucion(),
+    };
   }
 
   async function enviar(evento: React.FormEvent) {
@@ -191,76 +255,78 @@ export default function FormularioLead({ politicaUrl }: Props) {
 
     window.dataLayer = window.dataLayer || [];
 
-    if (!HAY_BACKEND) {
-      /* Entrega por WhatsApp.
-         La navegación va DENTRO del gesto del usuario y sin ningún await
-         delante: si esperásemos a una promesa, el navegador dejaría de
-         considerarlo una acción del usuario y el bloqueador de ventanas la
-         cortaría en silencio, que es el peor fallo posible en un formulario.
-         Si aun así se bloqueara la pestaña nueva, /gracias tiene su propio
-         botón de WhatsApp, así que el visitante nunca queda sin salida. */
-      window.dataLayer.push({
-        event: "lead_form_submit",
-        canal: "whatsapp",
-        area_interes: campos.area_interes,
-        lote: loteInteres || null,
-        inversion_estimada: inversion,
-      });
-      window.open(enlaceConDatos(), "_blank", "noopener");
+    /* Antibots: honeypot relleno o menos de 3 s desde que se pintó el formulario.
+       Se responde con un éxito falso; devolver un error le enseñaría al bot qué
+       cambiar. Un humano no rellena seis campos en tres segundos. */
+    const esBot =
+      (honeypot.current?.value ?? "") !== "" || Date.now() - ts.current < 3000;
+    if (esBot) {
       window.location.href = "/gracias";
+      return;
+    }
+
+    if (!hayWebhook) {
+      irAWhatsApp("sin-webhook");
       return;
     }
 
     setEnviando(true);
     setErrores({});
 
+    /* Timeout propio: sin él, un n8n colgado dejaría al visitante esperando con
+       el botón bloqueado hasta que el navegador se rinda. */
+    const control = new AbortController();
+    const temporizador = setTimeout(() => control.abort(), 8000);
+
     try {
-      const respuesta = await fetch("/api/lead", {
+      const respuesta = await fetch(WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...campos,
-          lote_interes: loteInteres,
-          valor_m2_estimado: valorM2,
-          inversion_estimada: inversion,
-          website: honeypot.current?.value ?? "", // lo rellenan los bots, no el usuario
-          ts: ts.current,
-          ...leerAtribucion(),
-        }),
+        body: JSON.stringify(payload()),
+        signal: control.signal,
       });
 
-      const datos = await respuesta.json().catch(() => ({}));
+      if (!respuesta.ok) throw new Error(`webhook ${respuesta.status}`);
 
-      if (!respuesta.ok || !datos.ok) {
-        if (datos.errores) {
-          setErrores(datos.errores);
-        } else {
-          setErrores({
-            general:
-              datos.mensaje ||
-              "No pudimos enviar tus datos. Inténtalo de nuevo o escríbenos por WhatsApp.",
-          });
-        }
-        setEnviando(false);
-        return;
-      }
-
-      window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
         event: "lead_form_submit",
-        area_interes: campos.area_interes,
-        lote: loteInteres || null,
-        inversion_estimada: inversion,
+        canal: "n8n",
+        lote: lote?.id ?? null,
+        precio_lote: lote?.precio ?? null,
+        cuota_inicial_simulada: cuotaInicial,
       });
 
       window.location.href = "/gracias";
-    } catch {
-      setErrores({
-        general:
-          "No pudimos conectar. Revisa tu conexión o escríbenos por WhatsApp.",
-      });
+    } catch (e) {
+      /* El webhook falló, tardó demasiado o CORS lo cortó. NO se muestra un
+         error: se entrega por WhatsApp con todo escrito. El lead no se pierde. */
+      console.error("[lead] fallo el webhook, se entrega por WhatsApp:", e);
       setEnviando(false);
+      irAWhatsApp("fallback-webhook");
+    } finally {
+      clearTimeout(temporizador);
     }
+  }
+
+  /**
+   * Entrega por WhatsApp.
+   *
+   * OJO CON EL ORDEN: `window.open` va dentro del gesto del usuario. En el
+   * camino de fallback ya hubo un `await` delante, así que Safari puede tratar
+   * la pestaña nueva como emergente y bloquearla; por eso /gracias tiene su
+   * propio botón de WhatsApp y el visitante nunca queda sin salida.
+   */
+  function irAWhatsApp(canal: string) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "lead_form_submit",
+      canal,
+      lote: lote?.id ?? null,
+      precio_lote: lote?.precio ?? null,
+      cuota_inicial_simulada: cuotaInicial,
+    });
+    window.open(enlaceConDatos(), "_blank", "noopener");
+    window.location.href = "/gracias";
   }
 
   /** Mensaje de WhatsApp con los datos ya cualificados del visitante. */
@@ -271,11 +337,19 @@ export default function FormularioLead({ politicaUrl }: Props) {
       `Nombre: ${campos.nombre}`,
       `Correo: ${campos.email}`,
       `Celular: ${campos.whatsapp}`,
-      `Area de interes: ${etiquetaArea(campos.area_interes)}`,
     ];
-    if (loteInteres) lineas.push(`Lote de interes: ${loteInteres}`);
-    if (inversion && valorM2) {
-      lineas.push(`Inversion estimada: ${formatearCOP(inversion)} a ${formatearCOP(valorM2)}/m2`);
+    if (lote) {
+      lineas.push(
+        `Lote de interes: ${nombreLote(lote)}`,
+        `Area: ${formatearNumero(lote.area)} m2`,
+        `Precio: ${formatearCOP(lote.precio)}`,
+      );
+      if (cuotaInicial !== null) {
+        const pct = porcentajeCuota !== null ? ` (${porcentajeCuota}%)` : "";
+        lineas.push(`Cuota inicial simulada${pct}: ${formatearCOP(cuotaInicial)}`);
+      }
+    } else {
+      lineas.push("Lote de interes: aun no lo he definido");
     }
     if (campos.mensaje.trim()) lineas.push("", `Mensaje: ${campos.mensaje.trim()}`);
 
@@ -355,37 +429,51 @@ export default function FormularioLead({ politicaUrl }: Props) {
           </Campo>
         </div>
 
-        <Campo id="area_interes" etiqueta="Área de interés">
+        {/* Selector de lote REAL, agrupado por predio. El <optgroup> no es
+            decorativo: sin el predio delante, tres opciones se llamarían "01". */}
+        <Campo id="lote" etiqueta="Lote de interés">
           <select
-            id="campo-area_interes"
-            value={campos.area_interes}
-            onChange={(e) => actualizar("area_interes", e.currentTarget.value)}
+            id="campo-lote"
+            value={campos.lote}
+            onChange={(e) => actualizar("lote", e.currentTarget.value)}
             className={entrada(false)}
           >
-            {opcionesAreaInteres.map((o) => (
-              <option key={o.valor} value={o.valor} className="bg-verde-900">
-                {o.etiqueta}
-              </option>
+            <option value="" className="bg-verde-900">
+              Aún no lo he definido
+            </option>
+            {lotesAgrupadosPorPredio.map((grupo) => (
+              <optgroup key={grupo.predio.id} label={grupo.predio.nombre}>
+                {grupo.lotes
+                  .filter((l) => l.estado === "disponible")
+                  .map((l) => (
+                    <option key={l.id} value={l.id} className="bg-verde-900">
+                      {`Lote ${l.etiqueta} · ${formatearNumero(l.area)} m² · ${formatearCOP(l.precio)}`}
+                    </option>
+                  ))}
+              </optgroup>
             ))}
           </select>
         </Campo>
 
-        {/* Resumen de lo que el visitante configuró antes de llegar aquí.
-            Se muestra para que vea que su selección viajó con él; los valores
-            van al CRM en campos ocultos. */}
-        {(loteInteres || inversion) && (
-          <div className="flex flex-wrap gap-2 rounded-sm border border-dorado-500/25 bg-verde-900/40 px-4 py-3">
-            {loteInteres && (
-              <span className="font-sans text-xs text-crema/70">
-                Lote <strong className="text-dorado-400">{loteInteres}</strong>
+        {/* Resumen de lo que el visitante configuró antes de llegar aquí. Se
+            muestra para que vea que su selección viajó con él; estos valores son
+            los que van al CRM. */}
+        {lote && (
+          <div className="rounded-sm border border-dorado-500/25 bg-verde-900/40 px-4 py-3">
+            <p className="font-sans text-xs text-crema/70">
+              <strong className="text-dorado-400">{nombreLote(lote)}</strong> ·{" "}
+              {formatearNumero(lote.area)} m² · {formatearCOP(lote.precio)}
+              <span className="block text-crema/45">
+                {formatearValorM2(precioM2(lote))}
+                {cuotaInicial !== null && (
+                  <>
+                    {" · cuota inicial"}
+                    {porcentajeCuota !== null ? ` del ${porcentajeCuota} %` : ""}:{" "}
+                    {formatearCOP(cuotaInicial)}
+                  </>
+                )}
               </span>
-            )}
-            {inversion && valorM2 && (
-              <span className="font-sans text-xs text-crema/70">
-                · Estimado <strong className="text-dorado-400">{formatearCOP(inversion)}</strong> a{" "}
-                {formatearCOP(valorM2)}/m²
-              </span>
-            )}
+            </p>
           </div>
         )}
 
@@ -453,23 +541,11 @@ export default function FormularioLead({ politicaUrl }: Props) {
           disabled={enviando}
           className="inline-flex w-full items-center justify-center rounded-sm bg-dorado-400 px-8 py-4 font-sans text-sm font-medium tracking-[0.14em] text-verde-900 uppercase transition-colors duration-200 hover:bg-dorado-500 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-dorado-400 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
-          {enviando ? "Enviando…" : HAY_BACKEND ? "Quiero más información" : "Enviar por WhatsApp"}
+          {enviando ? "Enviando…" : hayWebhook ? "Quiero más información" : "Enviar por WhatsApp"}
         </button>
       </form>
     </div>
   );
-}
-
-/** Etiqueta legible de una banda, para el mensaje de WhatsApp. */
-function etiquetaArea(id: string): string {
-  return opcionesAreaInteres.find((o) => o.valor === id)?.etiqueta ?? "Sin definir";
-}
-
-/** Devuelve el id de banda que corresponde a un área en m². */
-function bandaDeArea(area: number): string {
-  if (area <= 5000) return "3500-5000";
-  if (area <= 7500) return "5000-7500";
-  return "7500-10000";
 }
 
 function entrada(hayError: boolean): string {

@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CALCULADORA, opcionesValorM2 } from "../data/lotes";
-import { formatearCOP, formatearNumero } from "../data/proyecto";
+import {
+  CALCULADORA,
+  CUOTA_INICIAL_POR_DEFECTO,
+  PORCENTAJES_CUOTA_INICIAL,
+  lotesAgrupadosPorPredio,
+  loteDeId,
+  nombreLote,
+  precioM2,
+  simularPago,
+} from "../data/lotes";
+import { formatearCOP, formatearNumero, formatearValorM2 } from "../data/proyecto";
 
 declare global {
   interface Window {
@@ -9,114 +18,94 @@ declare global {
 }
 
 /**
- * Calculadora de inversión. La única isla React de esta sección.
+ * Simulador de pago sobre un LOTE REAL.
  *
- * Es la mejor herramienta de calificación que tiene la página: el lead llega al
- * CRM con área y presupuesto ya definidos por él mismo. Por eso aquí sí compensa
- * el runtime de React —hay estado real, sincronización entre tres controles y un
- * resultado derivado—, y se monta con client:visible para no entrar en la carga
- * inicial.
+ * Aquí había un slider genérico de área × valor por m². Ya no: con precios
+ * reales en la mano, ese control dejaba al visitante componer un lote que no
+ * existe y producía leads con un presupuesto que no correspondía a ninguna
+ * parcela del inventario. Ahora se elige un lote de verdad y todo lo demás se
+ * deriva de él: área, precio, $/m², cuota inicial y saldo.
  *
- * Sin dependencias: useState y useMemo. El cálculo es una multiplicación; lo que
- * cuesta es mantener coherentes slider, input numérico y selector de valor.
+ * Sigue siendo la mejor herramienta de calificación de la página: el lead llega
+ * al CRM con un lote concreto y una cuota inicial que él mismo simuló. Por eso
+ * compensa el runtime de React, y por eso se monta con client:visible y no entra
+ * en la carga inicial.
+ *
+ * El selector por defecto arranca VACÍO, no con un lote preseleccionado: una
+ * cifra ya pintada al llegar se lee como "el precio del proyecto" en vez de como
+ * "el precio de este lote".
  */
 
-const PRESET_POR_DEFECTO = opcionesValorM2.find((o) => o.porDefecto)!.valor;
-
-/** Acota un número al rango, tolerando NaN. */
-function acotar(valor: number, min: number, max: number): number {
-  if (!Number.isFinite(valor)) return min;
-  return Math.min(max, Math.max(min, valor));
-}
-
-/** Redondea al paso del slider para que ambos controles no se desincronicen. */
-function alPaso(valor: number): number {
-  return Math.round(valor / CALCULADORA.areaPaso) * CALCULADORA.areaPaso;
-}
-
 export default function Calculadora() {
-  const [area, setArea] = useState(CALCULADORA.areaPorDefecto);
-  const [valorM2, setValorM2] = useState<number>(PRESET_POR_DEFECTO);
-  /** Texto crudo del input de valor propio: se guarda como string para no
-   *  pelear con el cursor mientras el usuario escribe. */
-  const [valorPropio, setValorPropio] = useState("");
-  const [loteInteres, setLoteInteres] = useState<string | null>(null);
+  const [loteId, setLoteId] = useState<string>("");
+  const [porcentaje, setPorcentaje] = useState<number>(CUOTA_INICIAL_POR_DEFECTO);
 
-  const total = useMemo(() => area * valorM2, [area, valorM2]);
-  const totalAnimado = useNumeroAnimado(total);
+  const lote = useMemo(() => (loteId ? loteDeId(loteId) : undefined), [loteId]);
+  const pago = useMemo(
+    () => (lote ? simularPago(lote, porcentaje) : null),
+    [lote, porcentaje],
+  );
+  const cuotaAnimada = useNumeroAnimado(pago?.cuotaInicial ?? 0);
 
-  /* El plano y las bandas de área preseleccionan valores aquí */
+  /* El plano y las cards de lote preseleccionan aquí */
   useEffect(() => {
     function alSeleccionarLote(e: Event) {
-      const detalle = (e as CustomEvent<{ lote: string }>).detail;
-      if (detalle?.lote) setLoteInteres(detalle.lote);
-    }
-    function alPreseleccionarArea(e: Event) {
-      const detalle = (e as CustomEvent<{ area: number }>).detail;
-      if (typeof detalle?.area === "number") {
-        setArea(acotar(alPaso(detalle.area), CALCULADORA.areaMin, CALCULADORA.areaMax));
-      }
+      const detalle = (e as CustomEvent<{ loteId: string }>).detail;
+      if (detalle?.loteId && loteDeId(detalle.loteId)) setLoteId(detalle.loteId);
     }
     window.addEventListener("vh:lote-seleccionado", alSeleccionarLote);
-    window.addEventListener("vh:area-preseleccionada", alPreseleccionarArea);
-    return () => {
-      window.removeEventListener("vh:lote-seleccionado", alSeleccionarLote);
-      window.removeEventListener("vh:area-preseleccionada", alPreseleccionarArea);
-    };
+    return () => window.removeEventListener("vh:lote-seleccionado", alSeleccionarLote);
   }, []);
 
-  /* `calculadora_usada` se dispara cuando el usuario deja de mover los
-     controles, no en cada píxel del slider: si no, un solo arrastre generaría
-     cientos de eventos y el dato dejaría de servir para nada. */
+  /* `calculadora_usada` se dispara cuando el usuario deja de cambiar cosas, no
+     en cada pulsación: si no, el dato deja de servir para nada. */
   const primeraCarga = useRef(true);
   useEffect(() => {
     if (primeraCarga.current) {
       primeraCarga.current = false;
       return;
     }
+    if (!lote) return;
     const id = setTimeout(() => {
       window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push({ event: "calculadora_usada", area, valor_m2: valorM2 });
+      window.dataLayer.push({
+        event: "calculadora_usada",
+        lote: lote.id,
+        precio_lote: lote.precio,
+        cuota_inicial_pct: porcentaje,
+      });
     }, 900);
     return () => clearTimeout(id);
-  }, [area, valorM2]);
-
-  function elegirPreset(valor: number) {
-    setValorM2(valor);
-    setValorPropio("");
-  }
-
-  function escribirValorPropio(texto: string) {
-    // Se aceptan solo dígitos: los separadores de miles los pone el formateador
-    const limpio = texto.replace(/\D/g, "");
-    setValorPropio(limpio);
-    if (limpio !== "") {
-      setValorM2(acotar(Number(limpio), CALCULADORA.valorM2Min, CALCULADORA.valorM2Max));
-    }
-  }
+  }, [lote, porcentaje]);
 
   function cotizar() {
+    if (!lote || !pago) return;
+
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
       event: "cotizar_click",
-      area,
-      valor_m2: valorM2,
-      inversion_estimada: total,
-      lote: loteInteres,
+      lote: lote.id,
+      predio: lote.predio,
+      precio_lote: lote.precio,
+      area: lote.area,
+      cuota_inicial_simulada: pago.cuotaInicial,
     });
 
-    /* El formulario (Etapa 6) escucha esto para precargar sus campos ocultos */
+    /* El formulario escucha esto y precarga predio, lote, precio y cuota */
     window.dispatchEvent(
       new CustomEvent("vh:cotizacion", {
-        detail: { area, valorM2, total, lote: loteInteres },
+        detail: {
+          loteId: lote.id,
+          porcentaje,
+          cuotaInicial: pago.cuotaInicial,
+          saldo: pago.saldo,
+        },
       }),
     );
 
     const destino = document.getElementById("contacto");
     if (destino) destino.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-
-  const esPreset = opcionesValorM2.some((o) => o.valor === valorM2) && valorPropio === "";
 
   return (
     <div
@@ -127,138 +116,143 @@ export default function Calculadora() {
         {/* ── Controles ────────────────────────────────────────────── */}
         <div className="p-5 sm:p-10 lg:col-span-3">
           <p className="font-sans text-[0.7rem] tracking-[0.2em] text-dorado-400/80 uppercase">
-            Calcula tu inversión
+            Simula tu pago
           </p>
 
-          {loteInteres && (
-            <p className="mt-3 inline-flex items-center gap-2 rounded-xs border border-dorado-400/40 px-2.5 py-1 font-sans text-[0.65rem] tracking-[0.14em] text-dorado-400 uppercase">
-              Lote {loteInteres} seleccionado
+          {/* Selector de lote real. Un <optgroup> por predio, porque el número
+              solo es ambiguo: hay un "01" en cada predio. */}
+          <div className="mt-9">
+            <label htmlFor="selector-lote" className="font-sans text-sm text-crema/70">
+              Elige el lote
+            </label>
+            <select
+              id="selector-lote"
+              value={loteId}
+              onChange={(e) => setLoteId(e.currentTarget.value)}
+              className="mt-4 w-full rounded-sm border border-dorado-500/40 bg-verde-900 px-4 py-3.5 font-sans text-sm text-crema focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dorado-400"
+            >
+              <option value="" className="bg-verde-900">
+                Selecciona un lote…
+              </option>
+              {lotesAgrupadosPorPredio.map((grupo) => (
+                <optgroup key={grupo.predio.id} label={grupo.predio.nombre}>
+                  {grupo.lotes
+                    .filter((l) => l.estado === "disponible")
+                    .map((l) => (
+                      <option key={l.id} value={l.id} className="bg-verde-900">
+                        {`Lote ${l.etiqueta} · ${formatearNumero(l.area)} m² · ${formatearCOP(l.precio)}`}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          {/* Ficha del lote elegido */}
+          {lote ? (
+            <dl className="mt-9 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-dorado-500/20 pt-8 sm:grid-cols-3">
+              <Dato etiqueta="Predio y lote" valor={nombreLote(lote)} />
+              <Dato etiqueta="Área licencia" valor={`${formatearNumero(lote.area)} m²`} />
+              <Dato etiqueta="Precio total" valor={formatearCOP(lote.precio)} destacado />
+              <Dato etiqueta="Valor por m²" valor={formatearValorM2(precioM2(lote))} />
+            </dl>
+          ) : (
+            <p className="mt-9 border-t border-dorado-500/20 pt-8 font-sans text-sm leading-relaxed text-crema/50">
+              Elige un lote y te mostramos su área, su precio total, su valor por m² y
+              cuánto sería la cuota inicial.
             </p>
           )}
 
-          {/* Área */}
-          <div className="mt-9">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <label
-                htmlFor="area-slider"
-                className="font-sans text-sm text-crema/70"
-              >
-                Área del lote
-              </label>
-              <div className="flex items-baseline gap-2">
-                <input
-                  id="area-numero"
-                  type="number"
-                  inputMode="numeric"
-                  min={CALCULADORA.areaMin}
-                  max={CALCULADORA.areaMax}
-                  step={CALCULADORA.areaPaso}
-                  value={area}
-                  onChange={(e) => setArea(Number(e.currentTarget.value))}
-                  onBlur={(e) =>
-                    setArea(
-                      acotar(
-                        alPaso(Number(e.currentTarget.value)),
-                        CALCULADORA.areaMin,
-                        CALCULADORA.areaMax,
-                      ),
-                    )
-                  }
-                  aria-label="Área en metros cuadrados"
-                  className="w-28 rounded-sm border border-dorado-500/40 bg-verde-900 px-3 py-2 text-right font-serif text-xl text-dorado-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dorado-400"
-                />
-                <span className="font-serif text-xl text-dorado-400">m²</span>
-              </div>
-            </div>
-
-            <input
-              id="area-slider"
-              type="range"
-              min={CALCULADORA.areaMin}
-              max={CALCULADORA.areaMax}
-              step={CALCULADORA.areaPaso}
-              value={area}
-              onChange={(e) => setArea(Number(e.currentTarget.value))}
-              aria-label="Área del lote en metros cuadrados"
-              className="mt-5 w-full"
-            />
-
-            <div className="mt-2 flex justify-between font-sans text-[0.65rem] tracking-[0.1em] text-crema/40">
-              <span>{formatearNumero(CALCULADORA.areaMin)} m²</span>
-              <span>{formatearNumero(CALCULADORA.areaMax)} m²</span>
-            </div>
-          </div>
-
-          {/* Valor por m² */}
-          <fieldset className="mt-10">
-            <legend className="font-sans text-sm text-crema/70">Valor por m²</legend>
+          {/* Cuota inicial */}
+          <fieldset className="mt-10" disabled={!lote}>
+            <legend className="font-sans text-sm text-crema/70">Cuota inicial</legend>
 
             <div className="mt-4 flex flex-wrap gap-2.5">
-              {opcionesValorM2.map((opcion) => {
-                const activo = esPreset && valorM2 === opcion.valor;
+              {PORCENTAJES_CUOTA_INICIAL.map((pct) => {
+                const activo = porcentaje === pct;
                 return (
                   <button
-                    key={opcion.valor}
+                    key={pct}
                     type="button"
-                    onClick={() => elegirPreset(opcion.valor)}
+                    onClick={() => setPorcentaje(pct)}
                     aria-pressed={activo}
                     className={
-                      "rounded-sm border px-4 py-2.5 font-sans text-xs transition-colors duration-200 " +
+                      "rounded-sm border px-5 py-2.5 font-sans text-xs transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-45 " +
                       (activo
                         ? "border-dorado-400 bg-dorado-400/15 text-dorado-400"
                         : "border-dorado-500/35 text-crema/70 hover:border-dorado-500 hover:text-crema")
                     }
                   >
-                    {opcion.etiqueta}
+                    {pct} %
                   </button>
                 );
               })}
             </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-              <label htmlFor="valor-propio" className="font-sans text-xs text-crema/50">
-                O escribe otro valor
-              </label>
-              <input
-                id="valor-propio"
-                type="text"
-                inputMode="numeric"
-                placeholder={String(CALCULADORA.valorM2Min)}
-                value={valorPropio}
-                onChange={(e) => escribirValorPropio(e.currentTarget.value)}
-                className="w-32 rounded-sm border border-dorado-500/40 bg-verde-900 px-3 py-2 font-sans text-sm text-crema focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dorado-400"
-              />
-            </div>
-            <p className="mt-2 font-sans text-[0.65rem] text-crema/40">
-              Entre {formatearCOP(CALCULADORA.valorM2Min)} y {formatearCOP(CALCULADORA.valorM2Max)} por m².
-            </p>
           </fieldset>
         </div>
 
         {/* ── Resultado ────────────────────────────────────────────── */}
-        <div className="flex flex-col justify-center gap-6 border-t border-dorado-500/20 bg-verde-900 p-5 sm:p-10 lg:col-span-2 lg:border-t-0 lg:border-l">
+        <div className="flex flex-col justify-center gap-5 border-t border-dorado-500/20 bg-verde-900 p-5 sm:p-10 lg:col-span-2 lg:border-t-0 lg:border-l">
           <p className="font-sans text-xs text-crema/55">
-            {formatearNumero(area)} m² × {formatearCOP(valorM2)}/m²
+            {lote
+              ? `${nombreLote(lote)} · cuota inicial del ${porcentaje} %`
+              : "Cuota inicial estimada"}
           </p>
 
           <p
-            className="font-serif text-[2rem] leading-none break-all text-dorado-400 sm:text-5xl"
+            className="font-serif text-[2rem] leading-none break-words text-dorado-400 sm:text-5xl"
             aria-live="polite"
           >
-            {formatearCOP(totalAnimado)}
+            {lote ? formatearCOP(cuotaAnimada) : "—"}
           </p>
+
+          {lote && pago && (
+            <p className="font-sans text-sm text-crema/60">
+              Saldo: <span className="text-crema/85">{formatearCOP(pago.saldo)}</span>
+              <span className="block text-xs text-crema/40">
+                sobre un precio total de {formatearCOP(lote.precio)}
+              </span>
+            </p>
+          )}
 
           <p className="font-sans text-xs leading-relaxed text-crema/45">{CALCULADORA.nota}</p>
 
           <button
             type="button"
             onClick={cotizar}
-            className="mt-2 inline-flex items-center justify-center rounded-sm bg-dorado-400 px-8 py-4 font-sans text-sm font-medium tracking-[0.14em] text-verde-900 uppercase transition-colors duration-200 hover:bg-dorado-500 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-dorado-400"
+            disabled={!lote}
+            className="mt-2 inline-flex items-center justify-center rounded-sm bg-dorado-400 px-8 py-4 font-sans text-sm font-medium tracking-[0.14em] text-verde-900 uppercase transition-colors duration-200 hover:bg-dorado-500 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-dorado-400 disabled:cursor-not-allowed disabled:opacity-45"
           >
-            Cotizar este lote
+            {lote ? `Cotizar lote ${lote.etiqueta}` : "Elige un lote"}
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Dato({
+  etiqueta,
+  valor,
+  destacado = false,
+}: {
+  etiqueta: string;
+  valor: string;
+  destacado?: boolean;
+}) {
+  return (
+    <div>
+      <dt className="font-sans text-[0.65rem] tracking-[0.16em] text-crema/45 uppercase">
+        {etiqueta}
+      </dt>
+      <dd
+        className={
+          "mt-1.5 font-serif break-words " +
+          (destacado ? "text-xl text-dorado-400 sm:text-2xl" : "text-lg text-crema/90")
+        }
+      >
+        {valor}
+      </dd>
     </div>
   );
 }

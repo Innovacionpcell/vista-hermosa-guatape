@@ -6,12 +6,21 @@ formulario y WhatsApp**.
 
 - **Stack:** Astro 5 · Tailwind CSS 4 · islas React puntuales
 - **Hosting:** Hostinger, build automático en cada `push`. **Salida 100 % estática**
-- **Formulario:** entrega por WhatsApp. El endpoint de servidor está aparcado y
-  documentado abajo — activarlo tumbó producción una vez, leer antes de intentarlo
+- **Formulario:** POST desde el navegador a un webhook de n8n, que reenvía al CRM.
+  Con fallback a WhatsApp si el webhook no está configurado o falla — ver *Entrega de leads*
 
-> **La unidad comercial es el metro cuadrado.** El sitio nunca presenta un precio total
-> como cifra principal: comunica el valor por m² (desde $45.000, promedio $80.000) y el
-> visitante estima su total con la calculadora. Cualquier cambio debe respetar esa regla.
+> **La unidad comercial es el LOTE, no el metro cuadrado.** El precio total es siempre la
+> cifra principal; el valor por m² va como dato secundario dentro de la ficha de cada lote.
+> Motivo: el $/m² real del inventario va de $10.990 a $106.959 —casi 10× entre el lote más
+> grande y el más pequeño—, así que como cifra suelta no comunica nada e invita a comparar
+> lotes que no son comparables. Cualquier cambio debe respetar esa regla.
+
+> **Dos fuentes de cifras, y no se mezclan.** El inventario (11 lotes, áreas, precios,
+> $/m²) se **deriva** de `src/data/lotes.ts` y no se escribe a mano en ningún sitio. Las
+> cifras de campaña del hero, el `<title>` y la barra de datos —«desde $280.000.000» y
+> «desde $45.000/m²»— las **fijó el cliente** y viven en `proyecto.precioDesdeComercial` y
+> `proyecto.precioM2DesdeComercial`. No son el mínimo calculado y no se «corrigen» para
+> que cuadren con él.
 
 ---
 
@@ -26,8 +35,8 @@ npm run preview # sirve dist/ para revisarlo antes de desplegar
 
 Copia `.env.example` a `.env` y rellena lo que necesites. `.env` **nunca** se commitea.
 
-Para probar el formulario de verdad no basta `astro dev`: hay que compilar y arrancar
-el servidor. Ver *Backend del formulario → Probarlo en local*.
+El formulario funciona en `astro dev` sin más: si `PUBLIC_N8N_WEBHOOK_URL` está vacía,
+entrega por WhatsApp. Para probar el webhook de verdad, define esa variable en `.env`.
 
 ---
 
@@ -41,17 +50,17 @@ public/
   robots.txt
 src/
   components/   una sección por componente
-  data/         proyecto.ts · lotes.ts · galeria.ts · faq.ts — toda la data de negocio
+  data/         lotes.ts (inventario real) · proyecto.ts · galeria.ts · faq.ts
   layouts/      BaseLayout.astro — head SEO completo y JSON-LD
-  lib/lead.ts   validación, rate limit, respaldo y envío al CRM (solo servidor)
-  pages/        index.astro · gracias.astro · 404.astro · api/lead.ts
+  pages/        index.astro · gracias.astro · 404.astro
   styles/       global.css — tokens de marca y @font-face
 
-dist/
-  client/       lo estático ya compilado
-  server/       entry.mjs — el proceso que arranca Hostinger
-.data/          respaldo de leads y rate limit (runtime, nunca versionado)
+dist/           salida estática, con index.html en la raíz (docroot de Hostinger)
 ```
+
+`src/data/lotes.ts` es la **fuente única del inventario**: predio, número, área licencia,
+precio total y estado. El `$/m²` NO está en los datos — se calcula con `precioM2()`. Los
+rangos que alimentan copy, SEO y JSON-LD se derivan en `proyecto.inventario`.
 
 **Ningún texto de negocio se escribe dentro de un componente**: todo vive en `src/data/*.ts`.
 
@@ -121,20 +130,19 @@ Si Chrome no está en la ruta por defecto, se indica con `CHROME_PATH`.
 
 ---
 
-## Backend del formulario
+## Entrega de leads
 
-**Estado actual: el formulario entrega el lead por WhatsApp.** No hay endpoint
-de servidor activo, y eso es deliberado.
+**El formulario hace POST desde el navegador a un webhook de n8n**, y n8n reenvía al CRM.
+El sitio sigue siendo 100 % estático: no hay endpoint propio y no debe volver a haberlo.
 
 ### Por qué no hay adaptador de Node
 
-Se implementó y se probó un endpoint `/api/lead` con `@astrojs/node`. Al
-desplegarlo, **producción devolvió 403 Forbidden en toda la web**.
+Se implementó y se probó un endpoint `/api/lead` con `@astrojs/node`. Al desplegarlo,
+**producción devolvió 403 Forbidden en toda la web**.
 
-Causa: al añadir el adaptador, Astro parte la salida en `dist/client/` y
-`dist/server/`. El docroot de Hostinger sigue apuntando a `dist/`, que se quedó
-sin `index.html` → 403. De regalo, `dist/server/entry.mjs` quedaba descargable
-por HTTP. El sondeo lo dejó claro:
+Causa: al añadir el adaptador, Astro parte la salida en `dist/client/` y `dist/server/`.
+El docroot de Hostinger sigue apuntando a `dist/`, que se quedó sin `index.html` → 403. De
+regalo, `dist/server/entry.mjs` quedaba descargable por HTTP. El sondeo lo dejó claro:
 
 ```
 /                   403   dist/ sin index.html
@@ -143,42 +151,53 @@ por HTTP. El sondeo lo dejó claro:
 /server/entry.mjs   200   bundle de servidor expuesto
 ```
 
-Nótese que `/api/lead` daba 404: **el proceso Node nunca llegó a arrancar**,
-porque el campo `Entry file` del panel estaba vacío. Es decir, el adaptador
-tumbó el sitio sin llegar a aportar nada.
+Nótese que `/api/lead` daba 404: **el proceso Node nunca llegó a arrancar**, porque el
+campo `Entry file` del panel estaba vacío. El adaptador tumbó el sitio sin llegar a
+aportar nada.
 
-### Cómo activar el backend (si se quiere, y en este orden)
+Con n8n de por medio eso ya no hace falta: el webhook es el backend, y quien guarda las
+credenciales del CRM es n8n, no este repositorio.
 
-El endpoint está **probado y funcionando**, aparcado en
-`src/server/lead-endpoint.ts`. Vive fuera de `src/pages/` a propósito: ahí sería
-una ruta, y una ruta con `prerender = false` exige adaptador.
+### Configurarlo
 
-1. En hPanel, rellenar **`Entry file` = `dist/server/entry.mjs`** y confirmar
-   que el proceso Node arranca y responde. **Verificar esto ANTES de tocar el
-   código.**
-2. Mover `src/server/lead-endpoint.ts` → `src/pages/api/lead.ts`
-3. Añadir `adapter: node({ mode: 'standalone' })` en `astro.config.mjs`
-4. Definir `CRM_WEBHOOK_URL`, `CRM_WEBHOOK_SECRET` y `PUBLIC_BACKEND_LEADS=1`
-5. **Comprobar que `/` sigue devolviendo 200** antes de dar el cambio por bueno
+Definir `PUBLIC_N8N_WEBHOOK_URL` en hPanel (o en `.env` para local). Dos comprobaciones al
+hacerlo:
 
-> Si el docroot no se puede cambiar a `dist/client`, el adaptador volverá a
-> romper la web. Mejor dejarlo como está.
+1. Que n8n **acepta el origen** `https://lotescampestresguatape.com` (Settings → CORS /
+   `allowedOrigins`). Sin eso el navegador corta el POST y **todos los leads se van por el
+   fallback de WhatsApp sin que nadie lo note**.
+2. Que el flujo responde 2xx y rápido: el POST aborta a los 8 s.
 
-### Qué hace hoy el formulario
+La URL es **pública por diseño** — lleva prefijo `PUBLIC_` y viaja en el bundle. Es un
+buzón de leads, no una API con datos. Nunca se pone aquí un secreto ni una API key del
+CRM: lo peor que consigue un tercero es meter basura, y para eso están el honeypot, el
+tiempo mínimo de 3 s y el filtrado en n8n.
 
-Valida en cliente y abre WhatsApp con un mensaje que ya lleva **nombre, correo,
-celular, área de interés, lote e inversión estimada** — todo lo que el visitante
-configuró en el plano y la calculadora. No se pierde ningún lead y no hay
-terceros de por medio.
+### Payload
 
-La navegación ocurre dentro del gesto del usuario y sin `await` delante: con una
-promesa por medio, el navegador deja de tratarlo como acción del usuario y el
-bloqueador de ventanas la corta en silencio. Si aun así se bloqueara la pestaña,
-`/gracias` tiene su propio botón de WhatsApp.
+Contrato con el flujo de n8n. Cambiar un nombre aquí obliga a cambiarlo allí.
 
-Lo que se pierde frente al endpoint: las **UTM no viajan** con el lead (van en
-`sessionStorage`, pero no caben en el mensaje sin ensuciarlo) y no hay registro
-automático en el CRM. Ambas cosas vuelven al activar el backend.
+| Campo | Valor |
+|---|---|
+| `origen` | siempre `landing-vista-hermosa` |
+| `fecha_iso` | ISO 8601 |
+| `nombre`, `whatsapp`, `email` | el `whatsapp` va normalizado a `57XXXXXXXXXX` |
+| `predio` | `Vista Hermosa` · `La Piedrita` · `La Culebra` |
+| `lote` | `01`…`05` — **siempre junto a `predio`**: hay un `01` en cada predio |
+| `lote_id` | `vista-hermosa-01` — identificador estable para el CRM |
+| `precio_lote`, `area` | números, del lote elegido |
+| `cuota_inicial_simulada` | lo que simuló en la calculadora, o `null` |
+| `mensaje`, `consentimiento` | |
+| `utm_*`, `gclid`, `fbclid`, `referrer`, `landing_url` | atribución, capturada en el `<head>` |
+
+### Nunca perder un lead
+
+Si el webhook está sin configurar, falla, tarda de más o CORS lo corta, el formulario **no
+muestra un error**: abre WhatsApp con nombre, correo, celular, lote, área, precio y cuota
+inicial ya escritos en el mensaje. El visitante llega igual, por otro canal.
+
+Si el navegador bloquea la pestaña nueva, `/gracias` tiene su propio botón de WhatsApp, así
+que nunca se queda sin salida.
 
 ## TODOs pendientes de confirmar con el cliente
 
@@ -190,15 +209,16 @@ plausibles: van visibles a propósito.
 | 1 | Teléfono fijo y correo de contacto | `src/data/proyecto.ts` |
 | 2 | ~~Dominio definitivo~~ — resuelto: `lotescampestresguatape.com` | — |
 | 3 | Razón social y NIT del vendedor | footer |
-| 4 | URL del webhook del CRM y su secreto, **y decidir el mecanismo de envío** (ver arriba: el hosting es Node, no PHP) | Etapa 6 |
+| 4 | **URL del webhook de n8n** (`PUBLIC_N8N_WEBHOOK_URL`). Mientras esté vacía, el formulario entrega por WhatsApp y no se pierde ningún lead | `.env` / hPanel |
 | 5 | **Política de tratamiento de datos personales (Ley 1581 de 2012).** Bloqueante para publicar: el checkbox de consentimiento se muestra sin enlace hasta que exista. Se activa poniendo la URL en `proyecto.politicaDatos` | `src/data/proyecto.ts` |
-| 6 | **Cuáles dos lotes están vendidos.** El plano rotula 11 lotes con 2 marcados "SOLD", pero las líneas guía no permiten atribuirlos a un número con certeza. Por decisión explícita, **ningún hotspot se marca como vendido**: marcar mal un lote disponible cuesta un cliente | `src/data/lotes.ts` |
-| 7 | **11 lotes en el plano vs. 10 disponibles en los datos oficiales.** Se usa 10 en todo el copy y el JSON-LD, según la regla de que las cifras del cliente mandan | `src/data/lotes.ts` |
-| 8 | Área exacta y valor por m² de cada lote. Mientras no estén, **no se publica desglose lote por lote** | `src/data/lotes.ts` |
+| 6 | **Cuáles dos lotes están vendidos.** El plano rotula dos parcelas como "SOLD" pero no se pueden atribuir a un lote concreto con certeza. Por decisión explícita, **los 11 quedan en `disponible`**: marcar mal un lote disponible cuesta un cliente | `src/data/lotes.ts` |
+| 7 | **Revisar las cifras de campaña al marcar un lote como vendido.** «Desde $280.000.000» y «desde $45.000/m²» dejan de ser válidas si se venden La Culebra 01 o Vista Hermosa 01, que son los lotes que sostienen el extremo bajo | `src/data/proyecto.ts` |
+| 8 | **Qué polígono del plano corresponde a qué lote.** El emparejamiento actual es provisional: se hizo por tamaño relativo (el polígono más grande al lote más grande). El tooltip muestra área y precio, así que un emparejamiento equivocado enseña un precio equivocado sobre una parcela. **Verificar contra el plano rotulado antes de pautar** | `src/data/lotes.ts` |
+| 8b | Confirmar los porcentajes reales de cuota inicial (hoy 10/20/30 % son tramos habituales del sector, no un plan de pago confirmado) | `src/data/lotes.ts` |
 | 9 | Estado de la licencia en Planeación Municipal de Guatapé | sección Especificaciones |
 | 10 | Confirmar los ítems de especificaciones no verificados (energía, agua, escrituración) | `src/data/` |
 | 11 | Distancias a Medellín, al Aeropuerto JMC y a la Piedra del Peñol (estimadas, no confirmadas) | `src/data/proyecto.ts` |
-| 12 | Ajustar visualmente los polígonos de los hotspots del plano | `src/data/lotes.ts` |
+| 12 | Ajustar visualmente los polígonos de los hotspots del plano (van trazados a ojo) | `src/data/lotes.ts` |
 
 **Fotos del malecón de Guatapé y de la Piedra del Peñol:** no se incluyen. No consta que
 sean material propio del cliente y el riesgo de derechos de autor no compensa. Si el
@@ -206,7 +226,8 @@ cliente confirma que las tiene licenciadas, se agregan después.
 
 **Levantamiento topográfico (Consultoría YJC):** existe y sirve como respaldo técnico y
 para mencionar que el proyecto está radicado en Planeación, pero **no se usa como fuente
-de áreas comerciales**: su numeración es por predio y no coincide con la del brochure.
+de áreas comerciales**. Las áreas publicadas son las «área licencia» que entregó el
+cliente: ya descuentan la vía, y son las que se escrituran.
 
 ---
 

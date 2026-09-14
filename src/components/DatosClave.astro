@@ -1,14 +1,20 @@
 ---
-import { proyecto, formatearNumero, formatearValorM2 } from "../data/proyecto";
+import { proyecto, inventario, formatearCOP, formatearNumero } from "../data/proyecto";
 import Icono from "./Icono.astro";
 import type { NombreIcono } from "./iconos";
 
 /**
  * Barra de datos clave. Fondo crema, 4 columnas → 2 en móvil.
  *
- * El valor por m² es la cifra dominante de la barra: es la unidad comercial del
- * proyecto y lo que la gente busca. Por eso va destacada (`dominante: true`) y
- * en dorado-600, que es el dorado que da contraste AA sobre fondo claro.
+ * EL PRECIO TOTAL DEL LOTE ES LA CIFRA DOMINANTE. La unidad comercial es el
+ * lote, no el metro cuadrado: el $/m² real del inventario va de $10.990 a
+ * $106.959 y como cifra suelta no dice nada (ver la regla 1 de lotes.ts). El
+ * valor por m² aparece dentro de la ficha de cada lote, donde sí tiene contexto.
+ *
+ * El "desde" que se pinta aquí es el de CAMPAÑA, el mismo del h1 del hero, no el
+ * mínimo calculado del inventario: un "desde" que cambia de número entre el
+ * titular y la barra de datos de la misma pantalla se lee como un error. Las
+ * cifras reales lote por lote están tres secciones más abajo.
  */
 
 interface Dato {
@@ -21,18 +27,18 @@ interface Dato {
 const datos: Dato[] = [
   {
     icono: "lotes",
-    valor: String(proyecto.lotesDisponibles),
+    valor: String(inventario.disponibles),
     etiqueta: "Lotes disponibles",
   },
   {
     icono: "area",
-    valor: `${formatearNumero(proyecto.areaMin)} – ${formatearNumero(proyecto.areaMax)}`,
+    valor: `${formatearNumero(inventario.areaMin)} – ${formatearNumero(inventario.areaMax)}`,
     etiqueta: "Metros cuadrados por lote",
   },
   {
     icono: "precio",
-    valor: `Desde ${formatearValorM2(proyecto.precioM2Min)}`,
-    etiqueta: "Valor del metro cuadrado",
+    valor: `Desde ${formatearCOP(proyecto.precioDesdeComercial)}`,
+    etiqueta: "Precio por lote",
     dominante: true,
   },
   {

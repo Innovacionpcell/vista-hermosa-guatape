@@ -199,6 +199,32 @@ inicial ya escritos en el mensaje. El visitante llega igual, por otro canal.
 Si el navegador bloquea la pestaña nueva, `/gracias` tiene su propio botón de WhatsApp, así
 que nunca se queda sin salida.
 
+## El plano interactivo está apagado
+
+`PLANO_INTERACTIVO = false` en `src/data/lotes.ts`. El render se publica como
+**imagen de referencia**: sin hotspots, sin tooltips, sin foco de teclado y sin área
+ni precio superpuestos. El `<svg>` de polígonos, el tooltip y su script siguen en
+`PlanoLotes.astro`, intactos, detrás de la bandera.
+
+**Por qué.** No sabemos qué polígono corresponde a qué lote. Los polígonos se trazaron
+a ojo sobre el render y se emparejaron con los lotes por tamaño relativo —el más grande
+al lote más grande—, que es una conjetura razonable pero conjetura. Con el tooltip
+encendido, un emparejamiento equivocado le enseña al visitante un **precio equivocado
+sobre una parcela concreta**: no es un fallo de maquetación, es una cifra falsa sobre la
+que alguien puede decidir una compra. El plano aportaba exploración, y de eso ya se
+encarga el inventario lote por lote, cuyas cifras sí son exactas. El riesgo no compensa.
+
+Hay un segundo motivo: el render lleva rotulados `Lote 01`…`Lote 11` **impresos en la
+imagen** —la numeración corrida del brochure anterior—, que contradicen la numeración
+vigente por predio. De ahí el aviso que acompaña al plano.
+
+**Cómo reactivarlo**, cuando llegue el render rotulado por predio:
+
+1. Confirmar con el cliente qué polígono es qué lote y corregir los `hotspot`.
+2. Sustituir la imagen por el render nuevo (mismo `PLANO.base`).
+3. Poner `PLANO_INTERACTIVO = true`. El componente ya tiene todo el código.
+4. Revisar el aviso del `figcaption`: si el render nuevo rotula por predio, sobra.
+
 ## TODOs pendientes de confirmar con el cliente
 
 Están marcados en el código con `// TODO`. Ninguno se inventó ni se rellenó con datos
@@ -213,12 +239,12 @@ plausibles: van visibles a propósito.
 | 5 | **Política de tratamiento de datos personales (Ley 1581 de 2012).** Bloqueante para publicar: el checkbox de consentimiento se muestra sin enlace hasta que exista. Se activa poniendo la URL en `proyecto.politicaDatos` | `src/data/proyecto.ts` |
 | 6 | **Cuáles dos lotes están vendidos.** El plano rotula dos parcelas como "SOLD" pero no se pueden atribuir a un lote concreto con certeza. Por decisión explícita, **los 11 quedan en `disponible`**: marcar mal un lote disponible cuesta un cliente | `src/data/lotes.ts` |
 | 7 | **Revisar las cifras de campaña al marcar un lote como vendido.** «Desde $280.000.000» y «desde $45.000/m²» dejan de ser válidas si se venden La Culebra 01 o Vista Hermosa 01, que son los lotes que sostienen el extremo bajo | `src/data/proyecto.ts` |
-| 8 | **Qué polígono del plano corresponde a qué lote.** El emparejamiento actual es provisional: se hizo por tamaño relativo (el polígono más grande al lote más grande). El tooltip muestra área y precio, así que un emparejamiento equivocado enseña un precio equivocado sobre una parcela. **Verificar contra el plano rotulado antes de pautar** | `src/data/lotes.ts` |
+| 8 | **Qué polígono del plano corresponde a qué lote, y un render rotulado por predio.** Por eso el **plano interactivo está apagado** (`PLANO_INTERACTIVO = false`): se publica como imagen de referencia, sin hotspots ni tooltips. Ver abajo | `src/data/lotes.ts` |
 | 8b | Confirmar los porcentajes reales de cuota inicial (hoy 10/20/30 % son tramos habituales del sector, no un plan de pago confirmado) | `src/data/lotes.ts` |
 | 9 | Estado de la licencia en Planeación Municipal de Guatapé | sección Especificaciones |
 | 10 | Confirmar los ítems de especificaciones no verificados (energía, agua, escrituración) | `src/data/` |
 | 11 | Distancias a Medellín, al Aeropuerto JMC y a la Piedra del Peñol (estimadas, no confirmadas) | `src/data/proyecto.ts` |
-| 12 | Ajustar visualmente los polígonos de los hotspots del plano (van trazados a ojo) | `src/data/lotes.ts` |
+| 12 | Ajustar visualmente los polígonos de los hotspots del plano (van trazados a ojo) — solo relevante al reactivar el plano interactivo | `src/data/lotes.ts` |
 
 **Fotos del malecón de Guatapé y de la Piedra del Peñol:** no se incluyen. No consta que
 sean material propio del cliente y el riesgo de derechos de autor no compensa. Si el

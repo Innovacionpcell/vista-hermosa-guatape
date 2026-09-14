@@ -1,24 +1,40 @@
 ---
-import { lotes, PLANO, PLANO_VIEWBOX, esInteractivo, nombreLote, precioM2 } from "../data/lotes";
+import {
+  lotes,
+  PLANO,
+  PLANO_INTERACTIVO,
+  PLANO_VIEWBOX,
+  esInteractivo,
+  nombreLote,
+  precioM2,
+} from "../data/lotes";
 import { formatearCOP, formatearNumero, formatearValorM2 } from "../data/proyecto";
 import { src, srcset } from "../data/galeria";
 
 /**
- * Plano interactivo del predio.
+ * Plano del proyecto.
  *
- * Un <svg> superpuesto al render, con un polígono por lote. El viewBox usa el
- * mismo sistema de coordenadas en el que se trazaron los hotspots (1200×993) y
- * `preserveAspectRatio="none"` es seguro aquí porque el contenedor siempre tiene
- * exactamente la proporción de la imagen: el mapeo queda exacto a cualquier ancho.
+ * HOY ES UNA IMAGEN DE REFERENCIA, SIN INTERACCIÓN. La capa interactiva —<svg>
+ * de polígonos, tooltip con área y precio, foco de teclado y el evento
+ * `vh:lote-seleccionado`— sigue aquí entera, pero solo se pinta si
+ * `PLANO_INTERACTIVO` está en true.
  *
- * LA NUMERACIÓN ES POR PREDIO, no una secuencia 01–11. El plano cubre los tres
- * predios y cada uno numera sus lotes desde 01, así que el tooltip y la etiqueta
- * accesible SIEMPRE dicen predio + número ("Vista Hermosa 01"). Un "Lote 01" a
- * secas es ambiguo: hay tres.
+ * NO SE APAGÓ POR UN PROBLEMA TÉCNICO: no sabemos qué polígono corresponde a
+ * qué lote, y con el tooltip encendido un emparejamiento equivocado enseña un
+ * precio equivocado sobre una parcela concreta. El motivo completo y los pasos
+ * para reactivarlo están en el bloque de `PLANO_INTERACTIVO`, en
+ * src/data/lotes.ts. No se enciende aquí: se enciende allí, y solo después de
+ * verificar los polígonos.
  *
- * El tooltip ya sí muestra área y precio, porque el desglose por lote está
- * confirmado. Lo que NO está confirmado es qué polígono corresponde a qué lote:
- * ver el TODO de `hotspot` en src/data/lotes.ts antes de pautar.
+ * Mientras tanto la exploración la cubre TablaLotes.astro, cuyo inventario sí
+ * es exacto lote por lote.
+ *
+ * Cuando se reactive: el viewBox usa el mismo sistema de coordenadas en el que
+ * se trazaron los hotspots (1200×993) y `preserveAspectRatio="none"` es seguro
+ * porque el contenedor siempre tiene exactamente la proporción de la imagen, así
+ * que el mapeo queda exacto a cualquier ancho. La numeración es POR PREDIO, no
+ * una secuencia 01–11: el tooltip y la etiqueta accesible dicen siempre predio +
+ * número ("Vista Hermosa 01"), porque un "Lote 01" a secas es ambiguo —hay tres—.
  */
 ---
 
@@ -41,69 +57,80 @@ import { src, srcset } from "../data/galeria";
       />
     </picture>
 
-    <svg
-      class="absolute inset-0 h-full w-full"
-      viewBox={`0 0 ${PLANO_VIEWBOX.ancho} ${PLANO_VIEWBOX.alto}`}
-      preserveAspectRatio="none"
-      role="group"
-      aria-label="Plano interactivo: selecciona un lote para cotizarlo"
-    >
-      {
-        lotes.map((lote) => (
-          <g
-            class="hotspot"
-            data-lote={lote.id}
-            data-nombre={nombreLote(lote)}
-            data-detalle={`${formatearNumero(lote.area)} m² · ${formatearCOP(lote.precio)} · ${formatearValorM2(precioM2(lote))}`}
-            data-interactivo={String(esInteractivo(lote))}
-            role="button"
-            tabindex={esInteractivo(lote) ? 0 : -1}
-            aria-label={
-              esInteractivo(lote)
-                ? `${nombreLote(lote)}, ${formatearNumero(lote.area)} metros cuadrados, ${formatearCOP(lote.precio)}. Cotizar este lote`
-                : `${nombreLote(lote)}. Vendido`
-            }
-            aria-disabled={esInteractivo(lote) ? "false" : "true"}
-          >
-            <title>{`${nombreLote(lote)} · ${formatearNumero(lote.area)} m² · ${formatearCOP(lote.precio)}`}</title>
-            <polygon points={lote.hotspot} />
-          </g>
-        ))
-      }
-    </svg>
+    {/* Capa interactiva. Intacta, apagada por bandera — ver lotes.ts. */}
+    {
+      PLANO_INTERACTIVO && (
+        <>
+        <svg
+          class="absolute inset-0 h-full w-full"
+          viewBox={`0 0 ${PLANO_VIEWBOX.ancho} ${PLANO_VIEWBOX.alto}`}
+          preserveAspectRatio="none"
+          role="group"
+          aria-label="Plano interactivo: selecciona un lote para cotizarlo"
+        >
+          {
+            lotes.map((lote) => (
+              <g
+                class="hotspot"
+                data-lote={lote.id}
+                data-nombre={nombreLote(lote)}
+                data-detalle={`${formatearNumero(lote.area)} m² · ${formatearCOP(lote.precio)} · ${formatearValorM2(precioM2(lote))}`}
+                data-interactivo={String(esInteractivo(lote))}
+                role="button"
+                tabindex={esInteractivo(lote) ? 0 : -1}
+                aria-label={
+                  esInteractivo(lote)
+                    ? `${nombreLote(lote)}, ${formatearNumero(lote.area)} metros cuadrados, ${formatearCOP(lote.precio)}. Cotizar este lote`
+                    : `${nombreLote(lote)}. Vendido`
+                }
+                aria-disabled={esInteractivo(lote) ? "false" : "true"}
+              >
+                <title>{`${nombreLote(lote)} · ${formatearNumero(lote.area)} m² · ${formatearCOP(lote.precio)}`}</title>
+                <polygon points={lote.hotspot} />
+              </g>
+            ))
+          }
+        </svg>
 
-    {/* Tooltip: se posiciona en % sobre el contenedor, así escala solo */}
-    <div
-      id="plano-tooltip"
-      role="status"
-      aria-live="polite"
-      hidden
-      class="pointer-events-none absolute z-10 max-w-[14rem] -translate-x-1/2 -translate-y-full rounded-sm border border-dorado-400/60 bg-verde-900/95 px-3 py-2 text-center font-sans text-xs text-dorado-400 backdrop-blur-sm"
-    >
-      <span id="plano-tooltip-nombre" class="block font-medium"></span>
-      <span id="plano-tooltip-detalle" class="mt-0.5 block text-[0.65rem] text-crema/70"></span>
-    </div>
+        {/* Tooltip: se posiciona en % sobre el contenedor, así escala solo */}
+        <div
+          id="plano-tooltip"
+          role="status"
+          aria-live="polite"
+          hidden
+          class="pointer-events-none absolute z-10 max-w-[14rem] -translate-x-1/2 -translate-y-full rounded-sm border border-dorado-400/60 bg-verde-900/95 px-3 py-2 text-center font-sans text-xs text-dorado-400 backdrop-blur-sm"
+        >
+          <span id="plano-tooltip-nombre" class="block font-medium"></span>
+          <span id="plano-tooltip-detalle" class="mt-0.5 block text-[0.65rem] text-crema/70"></span>
+        </div>
+        </>
+      )
+    }
   </div>
 
-  {/* El aviso no es opcional. El render lleva rotulados "Lote 01"…"Lote 11" y
-      dos etiquetas "SOLD" IMPRESOS EN LA IMAGEN: es la numeración corrida del
-      brochure anterior, que ya no es la vigente. Sin esta línea, un visitante
-      que lee "Lote 07" en la foto y "La Piedrita 04" en el tooltip solo puede
-      concluir que la página se equivoca.
-      TODO: pedir al cliente un render rotulado por predio y borrar este aviso. */}
+  {/* El aviso no es opcional mientras el render sea el del brochure anterior:
+      lleva rotulados "Lote 01"…"Lote 11" y dos etiquetas "SOLD" IMPRESOS EN LA
+      IMAGEN. Esa numeración corrida contradice la vigente, que es por predio y
+      es la que usan el listado, el simulador y el formulario. Sin esta línea, un
+      visitante que lee "Lote 07" en la foto y "La Piedrita 04" en el listado
+      solo puede concluir que la página se equivoca.
+      TODO: al sustituir el render por uno rotulado por predio, borrar el aviso. */}
   <figcaption class="mt-4 space-y-2 font-sans text-xs text-texto/55">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <span>{PLANO.caption}</span>
-      <span class="text-texto/40">Toca un lote para ver su precio</span>
-    </div>
+    <p>{PLANO.caption}</p>
     <p class="text-texto/40">
-      Los rótulos impresos en el render corresponden a una numeración anterior. La
-      vigente es por predio y es la que aparece al tocar cada lote.
+      Imagen de referencia. Los rótulos impresos en el render corresponden a una
+      numeración anterior: el nombre, el área y el precio vigentes de cada lote son
+      los del listado que sigue.
     </p>
   </figcaption>
 </figure>
 
 <style>
+  /* Estilos de la capa interactiva. Hoy no los usa nadie: `PLANO_INTERACTIVO`
+     está en false y no se pinta ningún `.hotspot`. Se quedan aquí —son unos
+     cientos de bytes— para que reactivar el plano sea cambiar UNA bandera en
+     lotes.ts y nada más. No borrarlos "por limpieza" sin borrar también el
+     bloque interactivo del template. */
   .hotspot polygon {
     fill: transparent;
     stroke: transparent;
@@ -147,75 +174,81 @@ import { src, srcset } from "../data/galeria";
   }
 </style>
 
-<script is:inline>
-  (function () {
-    var plano = document.getElementById("plano");
-    var tooltip = document.getElementById("plano-tooltip");
-    if (!plano || !tooltip) return;
+{/* El comportamiento del plano, apagado por la misma bandera. Sin esto el
+    script se descargaría y ejecutaría para no encontrar ningún hotspot. */}
+{
+  PLANO_INTERACTIVO && (
+    <script is:inline>
+      (function () {
+        var plano = document.getElementById("plano");
+        var tooltip = document.getElementById("plano-tooltip");
+        if (!plano || !tooltip) return;
 
-    var tipNombre = document.getElementById("plano-tooltip-nombre");
-    var tipDetalle = document.getElementById("plano-tooltip-detalle");
-    var svg = plano.querySelector("svg");
-    var grupos = Array.prototype.slice.call(plano.querySelectorAll(".hotspot"));
-    var vb = svg.viewBox.baseVal;
+        var tipNombre = document.getElementById("plano-tooltip-nombre");
+        var tipDetalle = document.getElementById("plano-tooltip-detalle");
+        var svg = plano.querySelector("svg");
+        var grupos = Array.prototype.slice.call(plano.querySelectorAll(".hotspot"));
+        var vb = svg.viewBox.baseVal;
 
-    function mostrar(g) {
-      if (g.dataset.interactivo !== "true") return;
-      var caja = g.querySelector("polygon").getBBox();
-      /* De coordenadas del viewBox a porcentaje del contenedor: así el tooltip
-         sigue al polígono en cualquier ancho, sin recalcular en cada resize. */
-      tooltip.style.left = ((caja.x + caja.width / 2) / vb.width) * 100 + "%";
-      tooltip.style.top = (caja.y / vb.height) * 100 + "%";
-      tipNombre.textContent = g.dataset.nombre;
-      tipDetalle.textContent = g.dataset.detalle;
-      tooltip.hidden = false;
-      g.dataset.activo = "true";
-    }
-
-    function ocultar(g) {
-      tooltip.hidden = true;
-      if (g) delete g.dataset.activo;
-    }
-
-    function seleccionar(g) {
-      if (g.dataset.interactivo !== "true") return;
-      var loteId = g.dataset.lote;
-
-      window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push({ event: "lote_interes_click", lote: loteId });
-
-      /* La calculadora y el formulario escuchan este evento. Viaja el id
-         completo ("vista-hermosa-01"), nunca el número suelto. */
-      window.dispatchEvent(
-        new CustomEvent("vh:lote-seleccionado", { detail: { loteId: loteId } })
-      );
-
-      var destino = document.getElementById("calculadora");
-      if (destino) destino.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-
-    grupos.forEach(function (g) {
-      g.addEventListener("mouseenter", function () {
-        mostrar(g);
-      });
-      g.addEventListener("mouseleave", function () {
-        ocultar(g);
-      });
-      g.addEventListener("focus", function () {
-        mostrar(g);
-      });
-      g.addEventListener("blur", function () {
-        ocultar(g);
-      });
-      g.addEventListener("click", function () {
-        seleccionar(g);
-      });
-      g.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          seleccionar(g);
+        function mostrar(g) {
+          if (g.dataset.interactivo !== "true") return;
+          var caja = g.querySelector("polygon").getBBox();
+          /* De coordenadas del viewBox a porcentaje del contenedor: así el tooltip
+             sigue al polígono en cualquier ancho, sin recalcular en cada resize. */
+          tooltip.style.left = ((caja.x + caja.width / 2) / vb.width) * 100 + "%";
+          tooltip.style.top = (caja.y / vb.height) * 100 + "%";
+          tipNombre.textContent = g.dataset.nombre;
+          tipDetalle.textContent = g.dataset.detalle;
+          tooltip.hidden = false;
+          g.dataset.activo = "true";
         }
-      });
-    });
-  })();
-</script>
+
+        function ocultar(g) {
+          tooltip.hidden = true;
+          if (g) delete g.dataset.activo;
+        }
+
+        function seleccionar(g) {
+          if (g.dataset.interactivo !== "true") return;
+          var loteId = g.dataset.lote;
+
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({ event: "lote_interes_click", lote: loteId });
+
+          /* La calculadora y el formulario escuchan este evento. Viaja el id
+             completo ("vista-hermosa-01"), nunca el número suelto. */
+          window.dispatchEvent(
+            new CustomEvent("vh:lote-seleccionado", { detail: { loteId: loteId } })
+          );
+
+          var destino = document.getElementById("calculadora");
+          if (destino) destino.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        grupos.forEach(function (g) {
+          g.addEventListener("mouseenter", function () {
+            mostrar(g);
+          });
+          g.addEventListener("mouseleave", function () {
+            ocultar(g);
+          });
+          g.addEventListener("focus", function () {
+            mostrar(g);
+          });
+          g.addEventListener("blur", function () {
+            ocultar(g);
+          });
+          g.addEventListener("click", function () {
+            seleccionar(g);
+          });
+          g.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              seleccionar(g);
+            }
+          });
+        });
+      })();
+    </script>
+  )
+}

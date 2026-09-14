@@ -69,14 +69,16 @@ export interface Lote {
    * Polígono del hotspot en el sistema de coordenadas de PLANO_VIEWBOX.
    * Formato de `points` de <polygon>: "x1,y1 x2,y2 x3,y3 …"
    *
-   * TODO (VERIFICAR ANTES DE PAUTAR): la asignación polígono → lote es
-   * PROVISIONAL. Los polígonos se trazaron a ojo sobre el render y se han
-   * emparejado con los lotes reales por tamaño relativo (el polígono más grande
-   * al lote más grande, y así sucesivamente), que es la única correspondencia
-   * defendible sin el plano rotulado. El tooltip muestra área y precio, así que
-   * un emparejamiento equivocado enseña un precio equivocado sobre una parcela.
-   * Hay que verificarlos contra el plano rotulado del cliente. Se ajustan aquí,
-   * no en el componente.
+   * HOY NO SE USAN: `PLANO_INTERACTIVO` está en false, así que estos polígonos
+   * no se pintan. Se conservan para no rehacer el trazado cuando se reactive.
+   *
+   * TODO (ANTES DE PONER `PLANO_INTERACTIVO` EN true): la asignación
+   * polígono → lote es PROVISIONAL. Los polígonos se trazaron a ojo sobre el
+   * render y se emparejaron con los lotes reales por tamaño relativo (el
+   * polígono más grande al lote más grande, y así sucesivamente), que es la
+   * única correspondencia defendible sin el plano rotulado. Hay que
+   * verificarlos contra el plano rotulado del cliente. Se ajustan aquí, no en
+   * el componente.
    */
   hotspot: string;
 }
@@ -88,6 +90,41 @@ export interface Lote {
  * se superpone con este viewBox y escala solo con la imagen.
  */
 export const PLANO_VIEWBOX = { ancho: 1200, alto: 993 } as const;
+
+/**
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║ PLANO INTERACTIVO — APAGADO A PROPÓSITO                                  ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ * En `false`, el plano se publica como IMAGEN DE REFERENCIA: sin hotspots, sin
+ * tooltips, sin foco de teclado y sin área ni precio superpuestos. En `true`,
+ * vuelve el <svg> de polígonos con su tooltip y su evento `vh:lote-seleccionado`.
+ *
+ * POR QUÉ ESTÁ APAGADO:
+ * No sabemos qué polígono corresponde a qué lote. Los polígonos se trazaron a
+ * ojo sobre el render y se emparejaron con los lotes por tamaño relativo, que es
+ * una conjetura razonable pero conjetura al fin. Con el tooltip encendido, un
+ * emparejamiento equivocado le enseña al visitante un PRECIO EQUIVOCADO SOBRE
+ * UNA PARCELA CONCRETA. Eso no es un fallo de maquetación: es una cifra falsa
+ * sobre la que alguien puede tomar una decisión de compra.
+ *
+ * El plano interactivo aportaba exploración; el inventario lote por lote (ver
+ * TablaLotes.astro) ya cumple esa función y sus cifras sí son exactas. El riesgo
+ * no compensa lo que se gana.
+ *
+ * Y HAY UN SEGUNDO MOTIVO: el render lleva rotulados "Lote 01"…"Lote 11"
+ * IMPRESOS EN LA IMAGEN —la numeración corrida del brochure anterior—, que
+ * contradicen la numeración vigente por predio.
+ *
+ * CÓMO REACTIVARLO, cuando llegue el render rotulado por predio:
+ *   1. Confirmar con el cliente qué polígono es qué lote y corregir los
+ *      `hotspot` de cada lote contra el plano rotulado.
+ *   2. Sustituir la imagen por el render nuevo (mismo `PLANO.base`).
+ *   3. Poner esta bandera en `true`. El componente ya tiene todo el código.
+ *   4. Volver a revisar el aviso del figcaption: si el render nuevo rotula por
+ *      predio, la advertencia de "numeración anterior" sobra.
+ */
+export const PLANO_INTERACTIVO: boolean = false;
 
 export const PLANO = {
   base: "renders/plano-lotes-vista-hermosa-guatape",

@@ -430,7 +430,7 @@ export default function FormularioLead({ politicaUrl }: Props) {
               type="tel"
               inputMode="tel"
               autoComplete="tel-national"
-              placeholder="310 514 5648"
+              placeholder="311 763 7010"
               value={campos.whatsapp}
               onChange={(e) => actualizar("whatsapp", e.currentTarget.value)}
               onBlur={() => alSalir("whatsapp")}

@@ -86,8 +86,8 @@ export const proyecto = {
   coordenadas: { lat: 6.210427, lng: -75.155184 },
   googleMaps: "https://maps.app.goo.gl/MdV9hd78RU64HLUR7",
   tour360: "https://tour.panoee.net/6a8c990e2745174f948f54f8/dji_0533",
-  whatsapp: "573105145648",
-  whatsappDisplay: "310 514 5648",
+  whatsapp: "573117637010",
+  whatsappDisplay: "311 763 7010",
   desarrolla: "R&U Ingenieros",
   telefono: "PENDIENTE",
   email: "PENDIENTE",
@@ -148,7 +148,7 @@ Reglas duras sobre contenido:
     - Al hover/focus: fondo `verde-700`, borde `dorado-400`, y se despliega hacia la izquierda una etiqueta con fondo `verde-800` y texto dorado "Escríbenos". Transición de 200 ms, respetando `prefers-reduced-motion`.
     - Anillo sutil de pulso dorado (`box-shadow` animado, 2,5 s, `opacity` baja) que se detiene tras 3 ciclos para no saturar.
     - Posición `fixed` bottom-right, `z-index` por debajo del lightbox, con `env(safe-area-inset-bottom)` en iOS. En móvil se reubica arriba de la barra CTA sticky para que no se solapen.
-    - `href="https://wa.me/573105145648?text=..."` con mensaje precargado, URL-encoded: `Hola, vi la página de Lotes Campestres Vista Hermosa en Guatapé y quiero más información.` Si el usuario venía de un lote específico, el mensaje incluye el número de lote. `target="_blank" rel="noopener"`, `aria-label="Escribir por WhatsApp a Vista Hermosa Guatapé"`. Dispara `whatsapp_click`.
+    - `href="https://wa.me/573117637010?text=..."` con mensaje precargado, URL-encoded: `Hola, vi la página de Lotes Campestres Vista Hermosa en Guatapé y quiero más información.` Si el usuario venía de un lote específico, el mensaje incluye el número de lote. `target="_blank" rel="noopener"`, `aria-label="Escribir por WhatsApp a Vista Hermosa Guatapé"`. Dispara `whatsapp_click`.
     - **Barra CTA sticky en móvil**: fondo `verde-900/95` con blur, dos botones — WhatsApp (outline dorado) y "Agendar visita" (sólido dorado, hace scroll al formulario). Aparece tras 25% de scroll y se oculta cuando el formulario está en viewport.
 
 ## 5. SEO — es el criterio principal de éxito

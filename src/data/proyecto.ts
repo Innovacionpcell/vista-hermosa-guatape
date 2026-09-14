@@ -91,8 +91,8 @@ export const proyecto: Proyecto = {
   googleMaps: "https://maps.app.goo.gl/MdV9hd78RU64HLUR7",
   tour360: "https://tour.panoee.net/6a8c990e2745174f948f54f8/dji_0533",
 
-  whatsapp: "573105145648",
-  whatsappDisplay: "310 514 5648",
+  whatsapp: "573117637010",
+  whatsappDisplay: "311 763 7010",
 
   desarrolla: "R&U Ingenieros",
 

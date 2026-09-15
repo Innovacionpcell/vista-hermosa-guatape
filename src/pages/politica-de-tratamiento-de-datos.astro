@@ -1,0 +1,438 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import {
+  proyecto,
+  datosLegalesCompletos,
+  enlaceWhatsApp,
+} from "../data/proyecto";
+import Boton from "../components/Boton.astro";
+import Dato from "../components/DatoLegal.astro";
+
+/**
+ * Política de Tratamiento de Datos Personales — Ley 1581 de 2012.
+ *
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║ ESTO ES UN DOCUMENTO LEGAL, NO COPY DE MARKETING                         ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ * Está redactado sobre la estructura que exigen la Ley 1581 de 2012 y el
+ * Decreto 1074 de 2015 (que compiló el Decreto 1377 de 2013), y describe el
+ * tratamiento REAL de esta landing: qué campos recoge el formulario, por dónde
+ * viajan y con qué finalidad. No es un texto genérico copiado de otro sitio.
+ *
+ * AUN ASÍ, DEBE REVISARLO UN ABOGADO ANTES DE PUBLICARLA. Yo puedo asegurar que
+ * la estructura y los plazos corresponden a la norma y que el flujo de datos que
+ * describe es el que de verdad implementa este repositorio; no puedo asegurar
+ * que cubra las obligaciones concretas de esta empresa.
+ *
+ * MIENTRAS FALTEN DATOS LEGALES DEL RESPONSABLE la página:
+ *   · se sirve con `noindex`,
+ *   · muestra un aviso de borrador bien visible,
+ *   · y NO se enlaza desde el footer ni desde el consentimiento del formulario.
+ * Los huecos se marcan en rojo con el nombre del campo que falta, para que sea
+ * imposible confundirlos con texto definitivo. Ver `datosLegalesCompletos` en
+ * src/data/proyecto.ts.
+ *
+ * NADA SE INVENTA. Razón social, NIT y dirección no se deducen ni se rellenan
+ * con algo plausible: identificar mal a quien responde legalmente por los datos
+ * de los visitantes es peor que dejar el hueco a la vista.
+ */
+
+const wa = enlaceWhatsApp();
+
+/** Fecha de última actualización: la del build. */
+const actualizada = new Date().toLocaleDateString("es-CO", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+
+const titulo = "Política de Tratamiento de Datos Personales";
+---
+
+<BaseLayout
+  title={`${titulo} | Vista Hermosa Guatapé`}
+  description="Política de tratamiento de datos personales de Lotes Campestres Vista Hermosa en Guatapé, conforme a la Ley 1581 de 2012."
+  noindex={!datosLegalesCompletos}
+>
+  <main id="contenido" class="bg-crema">
+    <div class="mx-auto max-w-3xl px-5 py-20 sm:px-8 sm:py-28">
+      <a
+        href="/"
+        class="font-sans text-[0.7rem] tracking-[0.18em] text-texto/50 uppercase transition-colors duration-200 hover:text-verde-800"
+      >
+        ← Volver al proyecto
+      </a>
+
+      <h1 class="mt-8 font-serif text-3xl leading-tight text-verde-800 sm:text-4xl">
+        {titulo}
+      </h1>
+
+      <p class="mt-4 font-sans text-sm text-texto/55">
+        Última actualización: {actualizada}
+      </p>
+
+      {
+        !datosLegalesCompletos && (
+          <div class="mt-8 rounded-sm border-2 border-[#9B2C2C] bg-[#9B2C2C]/5 p-5">
+            <p class="font-sans text-sm font-medium text-[#9B2C2C]">
+              Borrador — no publicar todavía
+            </p>
+            <p class="mt-2 font-sans text-sm leading-relaxed text-texto/70">
+              Faltan datos que la Ley 1581 de 2012 exige para identificar al responsable
+              del tratamiento. Están marcados abajo en rojo. Esta página no se indexa ni
+              se enlaza desde el sitio hasta que se completen en
+              <code class="mx-1 rounded-xs bg-texto/10 px-1.5 py-0.5 text-[0.8em]">
+                src/data/proyecto.ts
+              </code>
+              y la revise un abogado.
+            </p>
+          </div>
+        )
+      }
+
+      <div class="politica mt-12">
+        <h2>1. Responsable del tratamiento</h2>
+        <p>
+          El responsable del tratamiento de los datos personales recolectados a través de
+          este sitio web es:
+        </p>
+        <dl class="ficha">
+          <dt>Razón social</dt>
+          <dd><Dato valor={proyecto.razonSocial} campo="razonSocial" /></dd>
+
+          <dt>NIT</dt>
+          <dd><Dato valor={proyecto.nit} campo="nit" /></dd>
+
+          <dt>Dirección de notificaciones</dt>
+          <dd>
+            <Dato valor={proyecto.direccionNotificaciones} campo="direccionNotificaciones" />
+          </dd>
+
+          <dt>Correo electrónico</dt>
+          <dd><Dato valor={proyecto.email} campo="email" /></dd>
+
+          <dt>Teléfono</dt>
+          <dd><Dato valor={proyecto.telefono} campo="telefono" /></dd>
+
+          <dt>WhatsApp</dt>
+          <dd>{proyecto.whatsappDisplay}</dd>
+
+          <dt>Sitio web</dt>
+          <dd>{proyecto.dominio}</dd>
+        </dl>
+
+        <h2>2. Datos personales que recolectamos</h2>
+        <p>
+          Este sitio no tiene registro de usuarios ni zona privada. Los únicos datos
+          personales que recolectamos son los que el visitante escribe voluntariamente en
+          el formulario de contacto:
+        </p>
+        <ul>
+          <li>Nombre completo.</li>
+          <li>Número de celular o WhatsApp.</li>
+          <li>Correo electrónico.</li>
+          <li>Mensaje, si decide escribir uno.</li>
+        </ul>
+        <p>
+          Junto a esos datos se registra información sobre el interés comercial y el
+          origen de la visita, que no identifica por sí sola a una persona: el lote
+          seleccionado, su predio, su área y su precio, la cuota inicial que el visitante
+          simuló, la fecha del envío, la página desde la que llegó, la dirección web de
+          origen y los parámetros de campaña publicitaria
+          (<code>utm_source</code>, <code>utm_medium</code>, <code>utm_campaign</code>,
+          <code>utm_content</code>, <code>utm_term</code>, <code>gclid</code> y
+          <code>fbclid</code>).
+        </p>
+        <p>
+          <strong>No recolectamos datos sensibles</strong> —los que revelan origen racial
+          o étnico, orientación política, convicciones religiosas, pertenencia a
+          sindicatos, datos de salud, de vida sexual o biométricos— ni pedimos documento de
+          identidad, datos financieros o información patrimonial en este sitio.
+        </p>
+        <p>
+          <strong>No dirigimos este sitio a menores de edad</strong> ni recolectamos sus
+          datos de forma consciente. Si detectamos que hemos recibido datos de un menor,
+          los eliminamos.
+        </p>
+
+        <h2>3. Finalidades del tratamiento</h2>
+        <p>Los datos recolectados se usan únicamente para:</p>
+        <ul>
+          <li>Responder la solicitud de información sobre los lotes del proyecto.</li>
+          <li>
+            Contactar al interesado por teléfono, WhatsApp o correo electrónico para
+            ampliar la información del lote que consultó.
+          </li>
+          <li>Coordinar y agendar visitas al proyecto.</li>
+          <li>
+            Adelantar la gestión comercial y, si el interesado decide comprar, el proceso
+            de negociación y documentación.
+          </li>
+          <li>
+            Medir el rendimiento de las campañas publicitarias de forma agregada, para
+            saber qué anuncios generan solicitudes reales.
+          </li>
+        </ul>
+        <p>
+          <strong>No vendemos, arrendamos ni cedemos datos personales a terceros</strong>
+          para que los usen con fines propios, y no los usamos para enviar publicidad de
+          productos ajenos a este proyecto.
+        </p>
+
+        <h2>4. Autorización del titular</h2>
+        <p>
+          El formulario incluye una casilla de autorización que el visitante debe marcar
+          de forma expresa antes de enviar sus datos. No está marcada por defecto y sin
+          ella el envío no se procesa. Esa casilla es la autorización previa, expresa e
+          informada que exige el artículo 9 de la Ley 1581 de 2012.
+        </p>
+        <p>
+          Si el visitante prefiere escribirnos por WhatsApp en lugar de usar el
+          formulario, entendemos que la autorización se otorga al iniciar él la
+          conversación con la finalidad de recibir información sobre el proyecto.
+        </p>
+        <p>
+          La autorización puede revocarse en cualquier momento por los canales de atención
+          indicados en el punto 7, salvo que exista un deber legal o contractual de
+          conservar los datos.
+        </p>
+
+        <h2>5. Derechos del titular</h2>
+        <p>
+          Conforme al artículo 8 de la Ley 1581 de 2012, el titular de los datos tiene
+          derecho a:
+        </p>
+        <ul>
+          <li>
+            Conocer, actualizar y rectificar sus datos personales. Este derecho se puede
+            ejercer frente a datos parciales, inexactos, incompletos, fraccionados, que
+            induzcan a error o cuyo tratamiento esté prohibido.
+          </li>
+          <li>
+            Solicitar prueba de la autorización otorgada, salvo cuando la ley no la exija.
+          </li>
+          <li>
+            Ser informado, previa solicitud, sobre el uso que se les ha dado a sus datos.
+          </li>
+          <li>
+            Presentar quejas ante la Superintendencia de Industria y Comercio por
+            infracciones a la ley, una vez agotado el trámite de consulta o reclamo ante
+            nosotros.
+          </li>
+          <li>
+            Revocar la autorización y solicitar la supresión de sus datos cuando no exista
+            un deber legal o contractual que obligue a conservarlos.
+          </li>
+          <li>Acceder gratuitamente a sus datos personales.</li>
+        </ul>
+
+        <h2>6. Deberes del responsable</h2>
+        <p>
+          Nos obligamos a garantizar al titular el ejercicio de sus derechos, a conservar
+          la información bajo las condiciones de seguridad necesarias para impedir su
+          adulteración, pérdida, consulta o acceso no autorizado, a actualizar y rectificar
+          los datos cuando corresponda, a tramitar las consultas y reclamos en los plazos
+          señalados, y a informar cuando determinada información se encuentre en discusión
+          por parte del titular.
+        </p>
+
+        <h2>7. Canales y procedimiento para consultas y reclamos</h2>
+        <p>
+          Las consultas, reclamos y solicitudes de supresión o de revocatoria de la
+          autorización se pueden presentar por cualquiera de estos canales:
+        </p>
+        <dl class="ficha">
+          <dt>Correo electrónico</dt>
+          <dd><Dato valor={proyecto.email} campo="email" /></dd>
+
+          <dt>WhatsApp</dt>
+          <dd>{proyecto.whatsappDisplay}</dd>
+
+          <dt>Dirección física</dt>
+          <dd>
+            <Dato valor={proyecto.direccionNotificaciones} campo="direccionNotificaciones" />
+          </dd>
+        </dl>
+        <p>
+          La solicitud debe indicar el nombre del titular, un canal de respuesta y una
+          descripción de los hechos o de la petición. Si el reclamo está incompleto, se le
+          pedirá al interesado que lo complete dentro de los cinco (5) días siguientes; si
+          pasan dos (2) meses sin respuesta, se entiende que desistió.
+        </p>
+        <p><strong>Plazos, conforme a los artículos 14 y 15 de la Ley 1581 de 2012:</strong></p>
+        <ul>
+          <li>
+            <strong>Consultas:</strong> se atienden en un máximo de diez (10) días hábiles.
+            Si no es posible, se informa al interesado el motivo y la fecha de respuesta,
+            que no superará los cinco (5) días hábiles siguientes al vencimiento del primer
+            plazo.
+          </li>
+          <li>
+            <strong>Reclamos:</strong> se atienden en un máximo de quince (15) días
+            hábiles. Si no es posible, se informa al interesado el motivo y la fecha de
+            respuesta, que no superará los ocho (8) días hábiles siguientes al vencimiento
+            del primer plazo.
+          </li>
+        </ul>
+        <p>
+          El titular solo puede acudir ante la Superintendencia de Industria y Comercio una
+          vez haya agotado este trámite ante nosotros.
+        </p>
+
+        <h2>8. Encargados del tratamiento y terceros</h2>
+        <p>
+          Para operar el sitio y atender las solicitudes nos apoyamos en proveedores que
+          actúan como encargados del tratamiento y que solo pueden usar los datos para
+          prestarnos su servicio:
+        </p>
+        <ul>
+          <li>
+            <strong>Proveedor de alojamiento web</strong>, que sirve este sitio y conserva
+            los registros técnicos propios de un servidor.
+          </li>
+          <li>
+            <strong>Servicio de automatización</strong>, que recibe el formulario y lo
+            entrega a nuestro sistema de gestión comercial.
+          </li>
+          <li>
+            <strong>Sistema de gestión comercial (CRM)</strong>, donde queda registrada la
+            solicitud para poder atenderla.
+          </li>
+          <li>
+            <strong>WhatsApp</strong>, cuando el interesado elige ese canal. La conversación
+            queda sujeta además a las políticas de su proveedor.
+          </li>
+          <li>
+            <strong>Herramientas de analítica y publicidad</strong>, cuando están activas,
+            que miden el uso del sitio y el rendimiento de las campañas. Estas herramientas
+            pueden implicar transferencia internacional de datos a los países donde operan
+            sus servidores.
+          </li>
+        </ul>
+
+        <h2>9. Seguridad de la información</h2>
+        <p>
+          El sitio se sirve cifrado mediante HTTPS y el envío del formulario viaja cifrado.
+          Aplicamos medidas técnicas y administrativas razonables para proteger la
+          información y limitamos el acceso al personal que necesita usarla para atender la
+          solicitud. Ninguna medida de seguridad es infalible, así que no podemos garantizar
+          seguridad absoluta.
+        </p>
+
+        <h2>10. Vigencia</h2>
+        <p>
+          Esta política rige desde su publicación. Los datos personales se conservarán
+          mientras subsista la finalidad que justificó su recolección y, después, durante
+          los plazos exigidos por las obligaciones legales, contables y comerciales
+          aplicables. Cumplidos esos plazos, se suprimen.
+        </p>
+        <p>
+          Podemos modificar esta política. Cualquier cambio sustancial se comunicará en
+          esta misma página, actualizando la fecha del encabezado.
+        </p>
+      </div>
+
+      <div class="mt-14 border-t border-dorado-500/30 pt-10">
+        <p class="font-sans text-sm leading-relaxed text-texto/60">
+          ¿Tienes una consulta sobre tus datos personales? Escríbenos y la atendemos en los
+          plazos de arriba.
+        </p>
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+          <Boton
+            href={wa}
+            variante="primario"
+            target="_blank"
+            rel="noopener"
+            data-evento="whatsapp_click"
+            data-origen="politica-datos"
+          >
+            Escribir por WhatsApp
+          </Boton>
+          <Boton href="/" variante="secundario">Volver al proyecto</Boton>
+        </div>
+      </div>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  /* Tipografía del documento. Se estila por descendencia y no clase a clase:
+     es prosa larga y homogénea, no una composición. */
+  .politica :global(h2) {
+    margin-top: 2.75rem;
+    font-family: var(--font-serif);
+    font-size: 1.375rem;
+    line-height: 1.3;
+    color: var(--color-verde-800);
+  }
+  .politica :global(h2:first-child) {
+    margin-top: 0;
+  }
+  .politica :global(p),
+  .politica :global(li) {
+    margin-top: 1rem;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.75;
+    color: color-mix(in srgb, var(--color-texto) 78%, transparent);
+  }
+  .politica :global(ul) {
+    margin-top: 0.5rem;
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+  .politica :global(li) {
+    margin-top: 0.5rem;
+    padding-left: 0.25rem;
+  }
+  .politica :global(li)::marker {
+    color: var(--color-dorado-600);
+  }
+  .politica :global(strong) {
+    color: var(--color-verde-800);
+    font-weight: 500;
+  }
+  .politica :global(code) {
+    font-size: 0.85em;
+    /* El código no se parte a mitad de palabra pero sí puede envolver: a 360 px
+       una lista de parámetros UTM se saldría del viewport. */
+    overflow-wrap: anywhere;
+  }
+
+  /* Ficha de datos del responsable: etiqueta encima del valor en móvil, en dos
+     columnas desde sm. */
+  .politica :global(.ficha) {
+    margin-top: 1.5rem;
+    display: grid;
+    gap: 0.25rem 1.5rem;
+    border-left: 2px solid color-mix(in srgb, var(--color-dorado-600) 45%, transparent);
+    padding-left: 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .politica :global(.ficha) {
+      grid-template-columns: 11rem 1fr;
+      gap: 0.75rem 1.5rem;
+    }
+  }
+  .politica :global(.ficha dt) {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--color-texto) 55%, transparent);
+  }
+  .politica :global(.ficha dd) {
+    margin: 0 0 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-verde-800);
+    overflow-wrap: anywhere;
+  }
+  @media (min-width: 640px) {
+    .politica :global(.ficha dd) {
+      margin-bottom: 0;
+    }
+  }
+</style>

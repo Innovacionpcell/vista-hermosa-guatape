@@ -36,9 +36,16 @@ export default defineConfig({
   integrations: [
     // Islas React solo donde hay estado real (formulario, lightbox, calculadora, filtro, menú móvil).
     react(),
-    // /gracias lleva noindex, así que no entra al sitemap.
+    // Fuera del sitemap: /gracias (lleva noindex) y la política de datos.
+    //
+    // La política se excluye SIEMPRE, no solo mientras es borrador. Es un
+    // documento legal, no contenido que deba competir en búsquedas, y mientras
+    // esté incompleta va con noindex: anunciarla en el sitemap y prohibir su
+    // indexación en la misma página es contradecirse. Cuando se publique seguirá
+    // siendo alcanzable —y por tanto indexable— desde el enlace del footer.
     sitemap({
-      filter: (page) => !page.includes('/gracias'),
+      filter: (page) =>
+        !page.includes('/gracias') && !page.includes('/politica-de-tratamiento-de-datos'),
     }),
   ],
 

@@ -1,0 +1,35 @@
+---
+import { esPendiente } from "../data/proyecto";
+
+/**
+ * Un dato de identificación legal del responsable del tratamiento.
+ *
+ * Si el cliente ya lo entregó, se pinta tal cual. Si no, se pinta un hueco ROJO
+ * con el nombre exacto del campo que falta en `src/data/proyecto.ts`.
+ *
+ * El hueco es deliberadamente feo. La alternativa —un guion, un "N/A" o un
+ * espacio en blanco— se lee como texto definitivo, y en una política de datos
+ * eso significa publicar un documento que dice identificar al responsable sin
+ * identificarlo. Mejor que chirríe: así nadie la da por buena por accidente.
+ */
+
+export interface Props {
+  valor: string;
+  /** Nombre del campo en proyecto.ts, para que se sepa dónde rellenarlo */
+  campo: string;
+}
+
+const { valor, campo } = Astro.props;
+const falta = esPendiente(valor);
+---
+
+{
+  falta ? (
+    <span class="inline-flex flex-wrap items-baseline gap-x-1.5 rounded-xs bg-[#9B2C2C]/10 px-2 py-1 font-sans text-[#9B2C2C]">
+      <span class="text-[0.7rem] font-medium tracking-[0.12em] uppercase">Falta</span>
+      <code class="text-[0.85em]">proyecto.{campo}</code>
+    </span>
+  ) : (
+    <>{valor}</>
+  )
+}

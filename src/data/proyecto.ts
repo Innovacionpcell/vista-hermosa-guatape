@@ -51,10 +51,12 @@ export interface Proyecto {
   telefono: string;
   email: string;
   dominio: string;
-  /** URL de la política de tratamiento de datos. Mientras sea PENDIENTE, el
-   *  formulario muestra el texto de consentimiento sin enlace, en vez de
-   *  enlazar a una página que no existe. */
-  politicaDatos: string;
+  /** Razón social del RESPONSABLE del tratamiento. Ley 1581 de 2012, art. 13. */
+  razonSocial: string;
+  /** NIT del responsable, con dígito de verificación. */
+  nit: string;
+  /** Dirección física de notificaciones. La ley la exige; no es opcional. */
+  direccionNotificaciones: string;
 }
 
 export const proyecto: Proyecto = {
@@ -115,8 +117,58 @@ export const proyecto: Proyecto = {
   telefono: "PENDIENTE", // TODO: confirmar antes de publicar
   email: "PENDIENTE", // TODO: confirmar antes de publicar
   dominio: "https://lotescampestresguatape.com",
-  politicaDatos: "PENDIENTE", // TODO: el cliente debe entregar la política (Ley 1581 de 2012)
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // IDENTIDAD LEGAL DEL RESPONSABLE DEL TRATAMIENTO
+  //
+  // TODO (BLOQUEANTE PARA PUBLICAR LA POLÍTICA): los tres los tiene que
+  // entregar el cliente. NO se inventan ni se deducen: un NIT equivocado en una
+  // política de datos no es una errata, es identificar mal a quien responde
+  // legalmente por los datos de los visitantes.
+  //
+  // Mientras alguno siga en PENDIENTE, `datosLegalesCompletos` es false y la
+  // política se sirve como BORRADOR con noindex y sin enlazar desde el sitio.
+  // En cuanto se rellenen los cinco campos —estos tres más email y telefono—,
+  // la página se completa y los enlaces se activan solos.
+  // ─────────────────────────────────────────────────────────────────────────
+  razonSocial: "PENDIENTE",
+  nit: "PENDIENTE",
+  direccionNotificaciones: "PENDIENTE",
 };
+
+/** Ruta de la política de tratamiento de datos. */
+export const RUTA_POLITICA_DATOS = "/politica-de-tratamiento-de-datos/";
+
+/** ¿Un campo sigue sin entregar? */
+export function esPendiente(valor: string): boolean {
+  return valor.trim() === "" || valor.startsWith("PENDIENTE");
+}
+
+/**
+ * ¿La política se puede publicar ya?
+ *
+ * La Ley 1581 de 2012 (art. 13) y el Decreto 1074 de 2015 obligan a identificar
+ * al responsable del tratamiento con nombre, domicilio y canales de atención. Si
+ * falta cualquiera de los cinco, la política está incompleta: se sigue pudiendo
+ * leer en su URL —para que el cliente la revise y la complete—, pero va con
+ * noindex, con un aviso de borrador y SIN enlazarse desde el sitio.
+ */
+export const datosLegalesCompletos: boolean = [
+  proyecto.razonSocial,
+  proyecto.nit,
+  proyecto.direccionNotificaciones,
+  proyecto.email,
+  proyecto.telefono,
+].every((campo) => !esPendiente(campo));
+
+/**
+ * URL que enlazan el consentimiento del formulario y el footer.
+ *
+ * Vacía mientras la política sea un borrador: es preferible un checkbox de
+ * consentimiento sin enlace que uno que lleve a un documento con huecos, que es
+ * peor que no tenerlo —parece que hay política y no la hay—.
+ */
+export const urlPoliticaDatos: string = datosLegalesCompletos ? RUTA_POLITICA_DATOS : "";
 
 /**
  * Inventario REAL, derivado de lotes.ts. Esto es lo que alimenta la barra de

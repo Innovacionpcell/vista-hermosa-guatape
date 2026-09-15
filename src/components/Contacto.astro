@@ -5,6 +5,7 @@ import {
   enlaceWhatsApp,
   formatearCOP,
   formatearNumero,
+  urlPoliticaDatos,
 } from "../data/proyecto";
 import TituloSeccion from "./TituloSeccion.astro";
 import FormularioLead from "./FormularioLead.tsx";
@@ -74,7 +75,7 @@ const wa = enlaceWhatsApp();
 
       {/* ── Columna derecha: el formulario ───────────────────────────── */}
       <div class="rounded-sm border border-dorado-500/25 bg-verde-700/25 p-6 sm:p-9">
-        <FormularioLead politicaUrl={proyecto.politicaDatos} client:visible />
+        <FormularioLead politicaUrl={urlPoliticaDatos} client:visible />
       </div>
     </div>
   </div>

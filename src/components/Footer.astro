@@ -1,5 +1,5 @@
 ---
-import { proyecto } from "../data/proyecto";
+import { proyecto, urlPoliticaDatos } from "../data/proyecto";
 import { logo, logoConstructora } from "../data/galeria";
 import Icono from "./Icono.astro";
 
@@ -168,9 +168,27 @@ const enlaces = [
         topográfico. Las áreas publicadas son área licencia y el precio indicado corresponde
         al lote completo.
       </p>
+      {/* El enlace va pegado a la frase que hace la afirmación, no suelto en
+          una fila de enlaces legales: quien lee "se tratan conforme a la Ley
+          1581" es quien puede querer comprobarlo.
+          `urlPoliticaDatos` viene vacía mientras la política sea un borrador, y
+          entonces la frase se queda sola, igual que hasta ahora. */}
       <p class="max-w-4xl font-sans text-[0.7rem] leading-relaxed text-crema/40">
         Los datos personales que nos compartas se tratan conforme a la Ley 1581 de 2012 y
-        se usan únicamente para contactarte sobre este proyecto.
+        se usan únicamente para contactarte sobre este proyecto.{
+          urlPoliticaDatos && (
+            <>
+              {" "}
+              <a
+                href={urlPoliticaDatos}
+                class="text-dorado-400/80 underline underline-offset-2 transition-colors duration-200 hover:text-dorado-400"
+              >
+                Ver la política de tratamiento de datos
+              </a>
+              .
+            </>
+          )
+        }
       </p>
     </div>
 

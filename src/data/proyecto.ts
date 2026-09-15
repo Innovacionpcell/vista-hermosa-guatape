@@ -114,26 +114,38 @@ export const proyecto: Proyecto = {
     url: "https://growthdigital.marketing/",
   },
 
-  telefono: "PENDIENTE", // TODO: confirmar antes de publicar
-  email: "PENDIENTE", // TODO: confirmar antes de publicar
+  // Línea fija comercial. Es DISTINTA del WhatsApp: el header, el footer y los
+  // CTA siguen marcando el móvil de arriba, que es el canal de venta. Este
+  // número aparece como teléfono de contacto del responsable en la política.
+  telefono: "+57 311 318 1155",
+
+  // Canal COMERCIAL, y es el que se publica. El correo que figura en el RUT
+  // ante la DIAN es otro y NO se publica: no es un canal de atención y
+  // exponerlo solo le trae spam a una cuenta administrativa.
+  email: "comercial@ryuingenieros.com",
+
   dominio: "https://lotescampestresguatape.com",
 
   // ─────────────────────────────────────────────────────────────────────────
   // IDENTIDAD LEGAL DEL RESPONSABLE DEL TRATAMIENTO
   //
-  // TODO (BLOQUEANTE PARA PUBLICAR LA POLÍTICA): los tres los tiene que
-  // entregar el cliente. NO se inventan ni se deducen: un NIT equivocado en una
-  // política de datos no es una errata, es identificar mal a quien responde
-  // legalmente por los datos de los visitantes.
+  // Fuente: RUT actualizado ante la DIAN. Representante legal: Sergio Andrés
+  // Ríos Usuga. Con estos tres campos más `email` y `telefono`,
+  // `datosLegalesCompletos` pasa a true y la política sale de borrador: se le
+  // quita el noindex, desaparecen el aviso y los huecos, y se activan los
+  // enlaces del footer y del consentimiento del formulario.
   //
-  // Mientras alguno siga en PENDIENTE, `datosLegalesCompletos` es false y la
-  // política se sirve como BORRADOR con noindex y sin enlazar desde el sitio.
-  // En cuanto se rellenen los cinco campos —estos tres más email y telefono—,
-  // la página se completa y los enlaces se activan solos.
+  // El NIT va tal como figura en el RUT, sin reformatear con puntos de millar:
+  // es un identificador, no una cifra.
+  //
+  // OJO: la razón social NO es "R&U Ingenieros" —así se llama la marca, y eso es
+  // `constructora.nombre`—, sino la denominación societaria completa. En la
+  // política tiene que ir la societaria, que es quien responde legalmente.
   // ─────────────────────────────────────────────────────────────────────────
-  razonSocial: "PENDIENTE",
-  nit: "PENDIENTE",
-  direccionNotificaciones: "PENDIENTE",
+  razonSocial: "R & U INGENIEROS S.A.S.",
+  nit: "900673974-0",
+  direccionNotificaciones:
+    "Carrera 43 A # 1 Sur - 50, Oficina 1006, Medellín, Antioquia, Colombia",
 };
 
 /** Ruta de la política de tratamiento de datos. */

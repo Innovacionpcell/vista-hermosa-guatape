@@ -111,6 +111,15 @@ const enlaces = [
           </li>
           <li>
             <a
+              href={`mailto:${proyecto.email}`}
+              class="inline-flex items-center gap-2.5 font-sans text-sm break-all text-crema/60 transition-colors duration-200 hover:text-dorado-400"
+            >
+              <Icono nombre="correo" tamano={15} class="shrink-0 text-dorado-400" />
+              {proyecto.email}
+            </a>
+          </li>
+          <li>
+            <a
               href={proyecto.googleMaps}
               target="_blank"
               rel="noopener"
@@ -182,10 +191,7 @@ const enlaces = [
               <a
                 href={urlPoliticaDatos}
                 class="text-dorado-400/80 underline underline-offset-2 transition-colors duration-200 hover:text-dorado-400"
-              >
-                Ver la política de tratamiento de datos
-              </a>
-              .
+              >Ver la política de tratamiento de datos</a>.
             </>
           )
         }

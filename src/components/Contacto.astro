@@ -55,6 +55,30 @@ const wa = enlaceWhatsApp();
             </span>
           </a>
 
+          {/* Correo comercial. Va DESPUÉS del de WhatsApp y con menos peso
+              visual a propósito: en este proyecto la conversación real ocurre
+              por WhatsApp, y el correo es la alternativa para quien prefiere
+              dejar constancia escrita. `break-all` porque la dirección es larga
+              y a 360 px se sale de la tarjeta. */}
+          <a
+            href={`mailto:${proyecto.email}`}
+            data-evento="correo_click"
+            data-origen="contacto"
+            class="flex items-center gap-4 rounded-sm border border-dorado-500/20 p-5 transition-colors duration-200 hover:border-dorado-400/50 hover:bg-verde-700/40"
+          >
+            <span class="shrink-0 text-dorado-400">
+              <Icono nombre="correo" tamano={22} />
+            </span>
+            <span class="flex min-w-0 flex-col">
+              <span class="font-sans text-[0.65rem] tracking-[0.18em] text-crema/50 uppercase">
+                O escríbenos al correo
+              </span>
+              <span class="font-sans text-base break-all text-dorado-400">
+                {proyecto.email}
+              </span>
+            </span>
+          </a>
+
           {/* Cifra de CAMPAÑA, la misma del hero y del title. Ver el bloque
               "CIFRAS DE CAMPAÑA" en src/data/proyecto.ts. */}
           <div class="rounded-sm border border-dorado-500/20 p-5">

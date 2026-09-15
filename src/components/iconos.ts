@@ -27,6 +27,9 @@ export const iconosTrazo = {
   documento: `<path d="M14 3H7a1.6 1.6 0 0 0-1.6 1.6v14.8A1.6 1.6 0 0 0 7 21h10a1.6 1.6 0 0 0 1.6-1.6V7.6z"/><path d="M14 3v4.6h4.6"/><path d="M9 13h6"/><path d="M9 16.5h4"/>`,
   agua: `<path d="M12 3.5c3.2 3.6 5.5 6.3 5.5 9.1A5.5 5.5 0 0 1 6.5 12.6c0-2.8 2.3-5.5 5.5-9.1z"/>`,
   energia: `<path d="M13.5 2.5 5 13.5h5.5L9.5 21.5 18 10.5h-5.5z"/>`,
+  // Sobre. El pliegue va como path aparte para que no se cierre contra el borde
+  // y se siga leyendo a 15 px, que es el tamaño al que va en el footer.
+  correo: `<rect x="3" y="5" width="18" height="14" rx="1.8"/><path d="m3.6 6.2 7.4 5.6a1.7 1.7 0 0 0 2 0l7.4-5.6"/>`,
   cerrar: `<path d="M6 6l12 12"/><path d="M18 6 6 18"/>`,
   "flecha-abajo": `<path d="M12 5v14"/><path d="m6 13 6 6 6-6"/>`,
 } as const;

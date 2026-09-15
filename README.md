@@ -227,33 +227,40 @@ vigente por predio. De ahí el aviso que acompaña al plano.
 
 ## Política de tratamiento de datos
 
-Está escrita y vive en `/politica-de-tratamiento-de-datos/`, pero **todavía no está
-publicada**. Sigue la estructura que exigen la Ley 1581 de 2012 y el Decreto 1074 de
-2015, y describe el tratamiento real de esta landing: los campos que recoge el
-formulario, por dónde viajan y con qué finalidad. No es un texto genérico.
+Publicada en `/politica-de-tratamiento-de-datos/`. Sigue la estructura que exigen la Ley
+1581 de 2012 y el Decreto 1074 de 2015, y describe el tratamiento real de esta landing:
+los campos que recoge el formulario, por dónde viajan y con qué finalidad. No es un texto
+genérico.
 
-**Faltan dos cosas para publicarla:**
+**Los datos del responsable ya están** (`razonSocial`, `nit`, `direccionNotificaciones`,
+`email`, `telefono` en `src/data/proyecto.ts`), tomados del RUT actualizado ante la DIAN.
+Con eso `datosLegalesCompletos` es `true` y la página salió de borrador sola: sin
+`noindex`, sin aviso, sin huecos, y con los enlaces del footer y del consentimiento del
+formulario activos.
 
-1. **Cinco datos del responsable** que solo puede dar el cliente: `razonSocial`, `nit`,
-   `direccionNotificaciones`, `email` y `telefono`, en `src/data/proyecto.ts`. No se
-   inventan: identificar mal a quien responde legalmente por los datos de los visitantes
-   es peor que dejar el hueco a la vista.
-2. **Revisión de un abogado.** La estructura y los plazos corresponden a la norma y el
-   flujo de datos que describe es el que implementa este repositorio; nadie ha
-   verificado que cubra las obligaciones concretas de esta empresa.
+> **Queda pendiente que la revise un abogado.** La estructura y los plazos corresponden a
+> la norma y el flujo de datos que describe es el que implementa este repositorio, pero
+> nadie ha verificado que cubra las obligaciones concretas de la empresa.
 
-**Mientras falte cualquiera de los cinco campos** (`datosLegalesCompletos === false`):
+Si algún día se vacía cualquiera de los cinco campos, la página vuelve a comportarse como
+borrador automáticamente: `noindex`, aviso en rojo, huecos marcados con el nombre del
+campo y enlaces desactivados. La lógica está en `datosLegalesCompletos`.
 
-- la página se sirve con `noindex`;
-- muestra un aviso de borrador en rojo y marca cada hueco con el nombre del campo, para
-  que sea imposible leerlo como texto definitivo;
-- **no se enlaza** desde el footer ni desde el consentimiento del formulario. Un checkbox
-  que enlaza a un documento con huecos es peor que uno sin enlace: aparenta que hay
-  política y no la hay.
+La política queda **fuera del `sitemap.xml`** en cualquier caso: es un documento legal, no
+contenido que deba competir en búsquedas. Sigue siendo indexable —ya no lleva `noindex`— y
+alcanzable desde el footer.
 
-Al rellenar los cinco campos, el `noindex`, el aviso y los dos enlaces se resuelven solos.
-No hay nada más que tocar. La página queda fuera del `sitemap.xml` en cualquier caso: es
-un documento legal, no contenido que deba competir en búsquedas.
+### Dos correos y dos teléfonos, a propósito
+
+| Dato | Valor | Dónde sale |
+|---|---|---|
+| Correo comercial | `comercial@ryuingenieros.com` | Footer, sección de contacto y política |
+| Correo del RUT | — | **No se publica.** Es administrativo, no un canal de atención |
+| WhatsApp | `311 763 7010` | Header, footer, CTA, botón flotante y política |
+| Teléfono fijo comercial | `+57 311 318 1155` | Solo en la política, como teléfono del responsable |
+
+Los CTA del sitio siguen marcando el WhatsApp, que es el canal de venta. El fijo aparece
+únicamente donde la ley pide un teléfono de contacto del responsable.
 
 ## TODOs pendientes de confirmar con el cliente
 
@@ -264,9 +271,9 @@ plausibles: van visibles a propósito.
 |---|---|---|
 | 1 | Teléfono fijo y correo de contacto | `src/data/proyecto.ts` |
 | 2 | ~~Dominio definitivo~~ — resuelto: `lotescampestresguatape.com` | — |
-| 3 | **Razón social, NIT y dirección de notificaciones del responsable**, más teléfono y correo. Son los cinco campos que destraban la política de datos | `src/data/proyecto.ts` |
+| 3 | ~~Razón social, NIT, dirección, teléfono y correo del responsable~~ — resuelto: entregados desde el RUT de la DIAN. La política de datos quedó publicada | — |
 | 4 | **URL del webhook de n8n** (`PUBLIC_N8N_WEBHOOK_URL`). Mientras esté vacía, el formulario entrega por WhatsApp y no se pierde ningún lead | `.env` / hPanel |
-| 5 | **Política de tratamiento de datos (Ley 1581 de 2012): redactada, pendiente de datos y de revisión legal.** Vive en `/politica-de-tratamiento-de-datos/`. Se publica sola al rellenar los cinco campos del punto 3. Ver abajo | `src/pages/politica-de-tratamiento-de-datos.astro` |
+| 5 | **Política de tratamiento de datos: publicada, pendiente de revisión legal.** Los datos del responsable ya están; falta que un abogado la valide. Ver abajo | `src/pages/politica-de-tratamiento-de-datos.astro` |
 | 6 | **Cuáles dos lotes están vendidos.** El plano rotula dos parcelas como "SOLD" pero no se pueden atribuir a un lote concreto con certeza. Por decisión explícita, **los 11 quedan en `disponible`**: marcar mal un lote disponible cuesta un cliente | `src/data/lotes.ts` |
 | 7 | **Revisar las cifras de campaña al marcar un lote como vendido.** «Desde $280.000.000» y «desde $45.000/m²» dejan de ser válidas si se venden La Culebra 01 o Vista Hermosa 01, que son los lotes que sostienen el extremo bajo | `src/data/proyecto.ts` |
 | 8 | **Qué polígono del plano corresponde a qué lote, y un render rotulado por predio.** Por eso el **plano interactivo está apagado** (`PLANO_INTERACTIVO = false`): se publica como imagen de referencia, sin hotspots ni tooltips. Ver abajo | `src/data/lotes.ts` |

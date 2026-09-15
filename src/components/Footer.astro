@@ -16,9 +16,14 @@ import Icono from "./Icono.astro";
  *   1. La marca del proyecto (logo Vista Hermosa), arriba con la navegación.
  *   2. La CONSTRUCTORA (logo R&U Ingenieros), en su propia franja y con su
  *      propio antetítulo. Es quien construye: merece peso visual propio.
- *   3. Quien hizo el sitio (Growth Digital), en letra pequeña abajo del todo.
+ *   3. Quien hizo el sitio (Growth Digital), en letra pequeña casi al final.
+ *   4. El copyright, lo último y lo más atenuado de todo.
  * Amontonar 2 y 3 en la misma línea haría parecer que R&U hizo la web o que
  * Growth Digital construye lotes. En móvil cada una ocupa su fila completa.
+ *
+ * El copyright iba antes en la misma fila que el crédito de la agencia, a
+ * izquierda y derecha. Separado y al final se lee por lo que es —la nota de
+ * cierre— y deja de competir con un enlace que sí se pulsa.
  */
 
 const { lat, lng } = proyecto.coordenadas;
@@ -32,11 +37,6 @@ const enlaces = [
   { href: "#faq", texto: "Preguntas frecuentes" },
   { href: "#contacto", texto: "Contacto" },
 ];
-
-// TODO: el cliente debe entregar la URL de Growth Digital. No se inventa un
-// dominio: mientras sea PENDIENTE, el crédito va como texto sin enlace.
-const growthUrl = "PENDIENTE";
-const hayGrowthUrl = !growthUrl.startsWith("PENDIENTE");
 ---
 
 <footer class="bg-verde-900">
@@ -174,24 +174,30 @@ const hayGrowthUrl = !growthUrl.startsWith("PENDIENTE");
       </p>
     </div>
 
-    <div
-      class="mt-8 flex flex-col gap-3 border-t border-dorado-500/15 pt-7 font-sans text-xs text-crema/35 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <p>© {anio} {proyecto.nombre}</p>
-      <p>
+    {/* ── Quién hizo el sitio ────────────────────────────────────────── */}
+    <div class="mt-8 border-t border-dorado-500/15 pt-7">
+      <p class="font-sans text-xs text-crema/35">
         Sitio web por{" "}
-        {
-          hayGrowthUrl ? (
-            <a
-              href={growthUrl}
-              class="text-dorado-400/80 transition-colors duration-200 hover:text-dorado-400"
-            >
-              Growth Digital
-            </a>
-          ) : (
-            <span class="text-dorado-400/80">Growth Digital</span>
-          )
-        }
+        <a
+          href={proyecto.agencia.url}
+          target="_blank"
+          rel="noopener"
+          data-evento="agencia_click"
+          class="text-dorado-400/80 transition-colors duration-200 hover:text-dorado-400 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-dorado-400"
+        >
+          {proyecto.agencia.nombre}
+        </a>
+      </p>
+    </div>
+
+    {/* ── Copyright. Último elemento del footer ──────────────────────── */}
+    {/* El año sale de `new Date().getFullYear()` en tiempo de BUILD, nunca
+        escrito a mano: un "© 2026" literal caduca el 1 de enero y nadie se
+        acuerda de volver aquí. Como el sitio se recompila en cada push, se
+        mantiene solo mientras el proyecto siga vivo. */}
+    <div class="mt-7 border-t border-dorado-500/10 pt-6">
+      <p class="font-sans text-[0.7rem] leading-relaxed text-crema/30">
+        © {anio} {proyecto.nombre}. Todos los derechos reservados.
       </p>
     </div>
   </div>

@@ -46,6 +46,8 @@ export interface Proyecto {
   whatsappDisplay: string;
   /** Constructora del proyecto. Fuente única de su nombre y su web. */
   constructora: { nombre: string; url: string };
+  /** Agencia que hace el sitio. Fuente única de su nombre y su web. */
+  agencia: { nombre: string; url: string };
   telefono: string;
   email: string;
   dominio: string;
@@ -100,6 +102,14 @@ export const proyecto: Proyecto = {
   constructora: {
     nombre: "R&U Ingenieros",
     url: "https://ryuingenieros.com/",
+  },
+
+  // Quién hace el sitio. Es un crédito distinto del de la constructora y en el
+  // footer van separados a propósito: R&U construye lotes, Growth Digital hace
+  // la web. Juntarlos confunde quién hizo qué.
+  agencia: {
+    nombre: "Growth Digital",
+    url: "https://growthdigital.marketing/",
   },
 
   telefono: "PENDIENTE", // TODO: confirmar antes de publicar

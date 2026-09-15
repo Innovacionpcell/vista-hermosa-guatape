@@ -257,4 +257,4 @@ cliente: ya descuentan la vía, y son las que se escrituran.
 
 ---
 
-Desarrollado por **Growth Digital**.
+Sitio web por **[Growth Digital](https://growthdigital.marketing/)**. Proyecto construido por **[R&U Ingenieros](https://ryuingenieros.com/)**.

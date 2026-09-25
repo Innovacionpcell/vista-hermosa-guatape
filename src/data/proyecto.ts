@@ -110,8 +110,8 @@ export const proyecto: Proyecto = {
   // footer van separados a propósito: R&U construye lotes, Growth Digital hace
   // la web. Juntarlos confunde quién hizo qué.
   agencia: {
-    nombre: "Growth Digital",
-    url: "https://growthdigital.marketing/",
+    nombre: "Growth Digital, agencia de marketing digital en Medellín",
+    url: "https://growthdigital.marketing/diseno-web-medellin/",
   },
 
   // Línea fija comercial. Es DISTINTA del WhatsApp: el header, el footer y los
